@@ -87,6 +87,7 @@ TEXTS = {
     "nav_shio": {"id": "Shio", "en": "Chinese Zodiac"},
     "nav_weton": {"id": "Horoskop Jawa", "en": "Javanese Horoscope"},
     "nav_mbti": {"id": "MBTI", "en": "MBTI"},
+    "nav_career": {"id": "Karir", "en": "Career"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
     "mbti_header": {"id": "🧠 MBTI Lo", "en": "🧠 Your MBTI"},
     "mbti_intro": {
@@ -101,6 +102,34 @@ TEXTS = {
     },
     "mbti_save": {"id": "Simpan & Analisa →", "en": "Save & Analyze →"},
     "mbti_edit": {"id": "Ganti tipe", "en": "Change type"},
+    "career_header": {"id": "💼 Karir Lo", "en": "💼 Your Career"},
+    "career_intro": {
+        "id": "Cerita soal pekerjaan lo sekarang — gw bakal analisa kecocokan sama karakter lo, kasih kekuatan natural, isu yg mungkin muncul, plus tips buat navigate-nya. Kalo emang bener-bener mismatch, gw kasih alternatif juga.",
+        "en": "Tell me about your current job — I'll analyze how well it fits your character, highlight your natural strengths, potential friction points, and tips to navigate them. If it's a true mismatch, I'll suggest alternatives too.",
+    },
+    "career_job": {"id": "Posisi / pekerjaan sekarang", "en": "Current job / role"},
+    "career_job_ph": {
+        "id": "Contoh: Product Manager, Guru SD, Freelance Designer",
+        "en": "e.g. Product Manager, Teacher, Freelance Designer",
+    },
+    "career_industry": {"id": "Industri / bidang (opsional)", "en": "Industry (optional)"},
+    "career_industry_ph": {"id": "Contoh: Tech, Pendidikan, Retail", "en": "e.g. Tech, Education, Retail"},
+    "career_duties": {
+        "id": "Tanggung jawab utama / daily tasks (opsional)",
+        "en": "Main responsibilities / daily tasks (optional)",
+    },
+    "career_duties_ph": {
+        "id": "Jelasin singkat aja — misal: 'roadmap produk, ngejar deadline tim, stakeholder mgmt'",
+        "en": "Brief overview — e.g. 'product roadmap, hitting team deadlines, stakeholder mgmt'",
+    },
+    "career_years": {"id": "Udah berapa lama di role ini? (opsional)", "en": "How long in this role? (optional)"},
+    "career_years_ph": {"id": "Contoh: 3 tahun, 6 bulan", "en": "e.g. 3 years, 6 months"},
+    "career_save": {"id": "Analisa Karir →", "en": "Analyze Career →"},
+    "career_edit": {"id": "Edit info karir", "en": "Edit career info"},
+    "career_err": {
+        "id": "Isi posisi kerjanya dulu ya 🙏",
+        "en": "Please enter your current role 🙏",
+    },
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
     "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
     "pr_hidup_label": {"id": "PR hidup", "en": "Life challenges"},
@@ -190,6 +219,7 @@ def save_session_to_storage() -> None:
             "relationships": st.session_state.get("relationships", []),
             "language": st.session_state.get("language", "id"),
             "mbti": st.session_state.get("mbti"),
+            "career": st.session_state.get("career"),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data))
     except Exception:
@@ -215,6 +245,7 @@ def load_session_from_storage() -> bool:
         st.session_state.relationships = data.get("relationships", [])
         st.session_state.language = data.get("language", "id")
         st.session_state.mbti = data.get("mbti")
+        st.session_state.career = data.get("career")
 
         # Backfill fields added after older sessions were first saved.
         profile = st.session_state.profile
@@ -460,6 +491,24 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
             "user lagi ngobrol soal kepribadian atau buka menu MBTI. Di page karakter "
             "lain, blend halus sebagai observasi.",
         ]
+
+    career = st.session_state.get("career")
+    if career and career.get("job_title"):
+        lines += [
+            "",
+            "-- Karir user (udah di-share) --",
+            f"Posisi: {career['job_title']}",
+        ]
+        if career.get("industry"):
+            lines.append(f"Industri: {career['industry']}")
+        if career.get("duties"):
+            lines.append(f"Tugas utama: {career['duties']}")
+        if career.get("years"):
+            lines.append(f"Lama di role: {career['years']}")
+        lines.append(
+            "Pas user nanya soal kerjaan/karir di chat umum, boleh reference ini. "
+            "Di page Karir, analisa lebih dalem."
+        )
 
     if zodiac and zodiac.get("sun"):
         lines += [
@@ -760,6 +809,128 @@ def render_mbti_page(profile: dict, zodiac: dict | None) -> None:
     render_cached_text_page(
         "mbti", lambda: mbti_prompt(current_mbti), profile, zodiac,
     )
+
+
+def career_prompt(career: dict) -> str:
+    parts = [f"Posisi sekarang: **{career.get('job_title', '-')}**"]
+    if career.get("industry"):
+        parts.append(f"Industri / bidang: {career['industry']}")
+    if career.get("duties"):
+        parts.append(f"Tanggung jawab utama: {career['duties']}")
+    if career.get("years"):
+        parts.append(f"Lama di role: {career['years']}")
+    career_block = "\n".join(parts)
+    return (
+        f"Gw mau lo analisa karir gw berdasarkan karakter lengkap gw (numerologi + lapisan "
+        f"lahir + MBTI kalau ada + tema tahun ini dari system prompt).\n\n"
+        f"{career_block}\n\n"
+        "Pake heading ## supaya jelas sectionsnya:\n\n"
+        "## 💼 Kecocokan Sama Karakter Lo\n"
+        "2 paragraf: apakah role ini klop sama misi hidup + bakat bawaan + panggilan hati + "
+        "aura luar + talenta lahir lo. Weigh: di sisi mana klop, di sisi mana berpotensi "
+        "drain. Rating soft: 'bener-bener nyambung', 'sebagian nyambung', 'stretch', atau "
+        "'mismatch'.\n\n"
+        "## ⭐ Kekuatan Natural Lo di Role Ini\n"
+        "3-4 poin bullet: apa yg lo bawa yg natural-nya kuat & cocok. Spesifik ke role.\n\n"
+        "## ⚠️ Potensi Isu / Friksi\n"
+        "3-4 poin bullet: dimana role ini bisa bikin lo capek / ga nyaman / kehilangan diri. "
+        "Jangan sugar-coat, tapi juga ga drama.\n\n"
+        "## 🛠️ Tips & Solusi\n"
+        "3-5 tips actionable buat navigate friksi + amplify kekuatan. Konkret, bukan 'be "
+        "yourself'.\n\n"
+        "## 🌱 Vibe Tahun Ini Buat Karir\n"
+        "1-2 paragraf: gimana tema tahun ini (personal year lo) affect karir — apa yg bijak "
+        "dikerjain sekarang, apa yg bijak di-hold / dipersiapin. Kasih hint timing.\n\n"
+        "## 🔀 Alternatif Karir (conditional)\n"
+        "**CUMA kasih section ini kalo kecocokan karakter beneran mismatch / role yg "
+        "sekarang bakal terus drain lo dalam jangka panjang** meskipun udah pake tips. "
+        "Kalo iya: kasih 3-4 alternatif role/bidang yg lebih natural sama karakter lo, "
+        "dengan alasan singkat per alternatif.\n"
+        "Kalo role sekarang masih workable dengan tweak: **ganti heading ini jadi "
+        "\"## 🚀 Next Level\" + kasih 2-3 arah pengembangan / specialization yg bisa bikin "
+        "role sekarang lebih klop sama karakter lo** (bukan pindah kerja, tapi evolve).\n\n"
+        "Style: teman curhat yg ngerti career, bukan HR consultant kaku. **Zero istilah "
+        "teknis numerologi/astrologi** (blend halus)."
+    )
+
+
+def render_career_page(profile: dict, zodiac: dict | None) -> None:
+    st.header(t("career_header"))
+
+    current = st.session_state.get("career")
+    editing = st.session_state.get("_career_editing", False)
+
+    if not current or editing:
+        if current is None:
+            st.info(t("career_intro"))
+        with st.form("career_form"):
+            job_title = st.text_input(
+                t("career_job"),
+                value=(current or {}).get("job_title", ""),
+                placeholder=t("career_job_ph"),
+            )
+            industry = st.text_input(
+                t("career_industry"),
+                value=(current or {}).get("industry", ""),
+                placeholder=t("career_industry_ph"),
+            )
+            duties = st.text_area(
+                t("career_duties"),
+                value=(current or {}).get("duties", ""),
+                placeholder=t("career_duties_ph"),
+                height=80,
+            )
+            years = st.text_input(
+                t("career_years"),
+                value=(current or {}).get("years", ""),
+                placeholder=t("career_years_ph"),
+            )
+            save = st.form_submit_button(t("career_save"), use_container_width=True)
+        if save:
+            if not job_title.strip():
+                st.error(t("career_err"))
+            else:
+                st.session_state.career = {
+                    "job_title": job_title.strip(),
+                    "industry": industry.strip(),
+                    "duties": duties.strip(),
+                    "years": years.strip(),
+                    "analysis": "",
+                }
+                st.session_state._career_editing = False
+                st.session_state.cached_pages.pop("career", None)
+                save_session_to_storage()
+                st.rerun()
+        return
+
+    header_cols = st.columns([5, 1])
+    header_cols[0].markdown(
+        f"**{current['job_title']}**"
+        + (f" · _{current['industry']}_" if current.get("industry") else "")
+    )
+    if header_cols[1].button(t("career_edit"), key="edit_career"):
+        st.session_state._career_editing = True
+        st.rerun()
+
+    st.divider()
+
+    if current.get("analysis"):
+        st.markdown(current["analysis"])
+        if st.button(t("refresh"), key="refresh_career"):
+            current["analysis"] = ""
+            st.session_state.career = current
+            save_session_to_storage()
+            st.rerun()
+    else:
+        placeholder = st.empty()
+        new_analysis = stream_assistant(
+            messages_for_api=[{"role": "user", "content": career_prompt(current)}],
+            system=system_prompt(profile, zodiac, today_local()),
+            placeholder=placeholder,
+        )
+        current["analysis"] = new_analysis
+        st.session_state.career = current
+        save_session_to_storage()
 
 
 def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") -> str:
@@ -1063,6 +1234,10 @@ with _lang_cols[1]:
             st.session_state.messages = []
             for _rel in st.session_state.get("relationships", []):
                 _rel["analysis"] = ""
+            _career = st.session_state.get("career")
+            if _career:
+                _career["analysis"] = ""
+                st.session_state.career = _career
             if st.session_state.get("profile"):
                 try:
                     save_session_to_storage()
@@ -1089,6 +1264,8 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "chat"
 if "mbti" not in st.session_state:
     st.session_state.mbti = None
+if "career" not in st.session_state:
+    st.session_state.career = None
 
 if "storage_loaded" not in st.session_state:
     if st.session_state.profile is None:
@@ -1209,6 +1386,7 @@ else:
             ("🎓", t("nav_karmic"), "karmic"),
             ("🎯", t("nav_fase"), "fase"),
             ("🧠", t("nav_mbti"), "mbti"),
+            ("💼", t("nav_career"), "career"),
             ("💑", t("nav_relationship"), "relationship"),
             ("🗓️", t("nav_arah"), "arah"),
             ("♈", t("nav_zodiak"), "zodiak"),
@@ -1234,6 +1412,7 @@ else:
             for key in [
                 "profile", "zodiac", "messages", "opening_generated",
                 "cached_pages", "relationships", "current_page", "mbti",
+                "career", "_career_editing",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
@@ -1291,6 +1470,9 @@ else:
 
     elif page == "mbti":
         render_mbti_page(profile, zodiac)
+
+    elif page == "career":
+        render_career_page(profile, zodiac)
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
