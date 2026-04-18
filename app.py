@@ -197,6 +197,56 @@ def load_session_from_storage() -> bool:
         st.session_state.cached_pages = data.get("cached_pages", {})
         st.session_state.relationships = data.get("relationships", [])
         st.session_state.language = data.get("language", "id")
+
+        # Backfill fields added after older sessions were first saved.
+        profile = st.session_state.profile
+        zodiac = st.session_state.zodiac or {}
+        migrated = False
+        try:
+            dob = date.fromisoformat(profile["dob"])
+        except Exception:
+            dob = None
+
+        if dob is not None:
+            if not zodiac.get("shio"):
+                zodiac["shio"] = chinese_zodiac(dob)
+                migrated = True
+                st.session_state.cached_pages.pop("shio", None)
+            if not zodiac.get("weton"):
+                zodiac["weton"] = weton(dob)
+                migrated = True
+                st.session_state.cached_pages.pop("weton", None)
+
+        if "balance" not in profile or "rational_thought" not in profile \
+                or "pinnacles" not in profile:
+            try:
+                today = today_local()
+                nickname = profile.get("nickname")
+                fresh = build_profile(
+                    profile["full_name"], dob, today=today, nickname=nickname,
+                )
+                for key in (
+                    "balance", "rational_thought", "pinnacles", "challenges",
+                    "current_phase", "karmic_debts", "karmic_lessons",
+                    "hidden_passion", "maturity",
+                ):
+                    if key in fresh and key not in profile:
+                        profile[key] = fresh[key]
+                profile.setdefault("meanings", {}).update(
+                    {k: v for k, v in fresh["meanings"].items() if k not in profile["meanings"]}
+                )
+                migrated = True
+                st.session_state.cached_pages.pop("fase", None)
+                st.session_state.cached_pages.pop("inner", None)
+            except Exception:
+                pass
+
+        if migrated:
+            st.session_state.zodiac = zodiac
+            try:
+                save_session_to_storage()
+            except Exception:
+                pass
         return True
     except Exception:
         return False
