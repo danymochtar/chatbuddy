@@ -76,7 +76,7 @@ TEXTS = {
         "id": "Tulis pertanyaan atau cerita lo...",
         "en": "Ask a question or share something...",
     },
-    "nav_chat": {"id": "Chat", "en": "Chat"},
+    "nav_chat": {"id": "Beranda", "en": "Home"},
     "nav_karakter": {"id": "Karakter", "en": "Character"},
     "nav_inner": {"id": "Aspek Dalam", "en": "Inner Aspect"},
     "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
@@ -1022,34 +1022,6 @@ else:
         st.markdown(f"### 👋 Hi, **{nick_display}**")
         st.caption(f"_{profile['full_name']} · lahir {profile['dob']}_")
 
-        st.divider()
-
-        nav_items = [
-            ("💬", t("nav_chat"), "chat"),
-            ("👤", t("nav_karakter"), "karakter"),
-            ("🔍", t("nav_inner"), "inner"),
-            ("🎓", t("nav_karmic"), "karmic"),
-            ("🎯", t("nav_fase"), "fase"),
-            ("🗓️", t("nav_arah"), "arah"),
-            ("♈", t("nav_zodiak"), "zodiak"),
-            ("🐉", t("nav_shio"), "shio"),
-            ("🌿", t("nav_weton"), "weton"),
-            ("💑", t("nav_relationship"), "relationship"),
-        ]
-        for emoji, label, key in nav_items:
-            is_active = st.session_state.current_page == key
-            prefix = "✓ " if is_active else ""
-            if st.button(
-                f"{prefix}{emoji} {label}",
-                key=f"nav_{key}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
-                st.session_state.current_page = key
-                st.rerun()
-
-        st.divider()
-
         with st.expander(t("angka_utama")):
             for label_key, key in [
                 ("misi_hidup", "life_path"),
@@ -1091,6 +1063,33 @@ else:
                     f"**{t('versi_dewasa_label')}:** `{maturity}` · _{ARCHETYPES[maturity]}_"
                 )
 
+        st.divider()
+
+        nav_items = [
+            ("🏠", t("nav_chat"), "chat"),
+            ("👤", t("nav_karakter"), "karakter"),
+            ("🔍", t("nav_inner"), "inner"),
+            ("🎓", t("nav_karmic"), "karmic"),
+            ("🎯", t("nav_fase"), "fase"),
+            ("🗓️", t("nav_arah"), "arah"),
+            ("♈", t("nav_zodiak"), "zodiak"),
+            ("🐉", t("nav_shio"), "shio"),
+            ("🌿", t("nav_weton"), "weton"),
+            ("💑", t("nav_relationship"), "relationship"),
+        ]
+        for emoji, label, key in nav_items:
+            is_active = st.session_state.current_page == key
+            prefix = "✓ " if is_active else ""
+            if st.button(
+                f"{prefix}{emoji} {label}",
+                key=f"nav_{key}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary",
+            ):
+                st.session_state.current_page = key
+                st.rerun()
+
+        st.divider()
         st.caption(t("storage_note"))
         if st.button(t("reset"), use_container_width=True):
             clear_session_storage()
