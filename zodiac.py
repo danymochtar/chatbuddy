@@ -187,10 +187,10 @@ NEPTU_RANGE_MEANINGS = {
 
 
 def weton(dob: date) -> dict:
-    # Reference: Jan 1 2000 = Sabtu Pahing (Saturday Pahing, pasaran index 1)
-    ref = date(2000, 1, 1)
+    # Reference: 17 May 1995 = Rabu Legi (verified against Javanese calendar)
+    ref = date(1995, 5, 17)
     days = (dob - ref).days
-    pasaran_idx = (1 + days) % 5
+    pasaran_idx = days % 5  # Legi = 0 on reference date
     pasaran_name = PASARAN[pasaran_idx]
     dina_name = DINA[dob.weekday()]
     neptu = DINA_NEPTU[dina_name] + PASARAN_NEPTU[pasaran_name]
