@@ -73,6 +73,15 @@ TEXTS = {
     "nav_arah": {"id": "Arah Bulan & Tahun", "en": "Month & Year Guide"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
+    "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
+    "pr_hidup_label": {"id": "PR hidup", "en": "Life challenges"},
+    "pelajaran_label": {"id": "Pelajaran hidup", "en": "Life lessons"},
+    "pelajaran_kosong": {
+        "id": "lengkap (semua angka ada di nama)",
+        "en": "complete (all numbers present in name)",
+    },
+    "obsesi_label": {"id": "Obsesi tersembunyi", "en": "Hidden drive"},
+    "versi_dewasa_label": {"id": "Versi dewasa lo", "en": "Mature version"},
     "reset": {"id": "Reset sesi", "en": "Reset session"},
     "storage_note": {
         "id": "💾 Sesi tersimpen di browser lo.",
@@ -800,6 +809,36 @@ else:
             ]:
                 num = profile[key]
                 st.markdown(f"**{t(label_key)}:** `{num}` · _{ARCHETYPES[num]}_")
+
+        with st.expander(t("aspek_detail")):
+            debts = profile.get("karmic_debts") or {}
+            debt_labels = {
+                "life_path": t("misi_hidup"),
+                "expression": t("bakat_bawaan"),
+                "soul_urge": t("panggilan_hati"),
+                "personality": t("aura_luar"),
+            }
+            active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
+            if active_debts:
+                st.markdown(f"**{t('pr_hidup_label')}:**")
+                for lbl, val in active_debts:
+                    st.markdown(f"- {lbl}: `{val}`")
+            lessons = profile.get("karmic_lessons") or []
+            if lessons:
+                st.markdown(
+                    f"**{t('pelajaran_label')}:** {', '.join(str(n) for n in lessons)}"
+                )
+            else:
+                st.markdown(f"**{t('pelajaran_label')}:** {t('pelajaran_kosong')}")
+            passion = profile.get("hidden_passion") or []
+            if passion:
+                names = ", ".join(f"`{n}` ({ARCHETYPES[n]})" for n in passion)
+                st.markdown(f"**{t('obsesi_label')}:** {names}")
+            maturity = profile.get("maturity")
+            if maturity:
+                st.markdown(
+                    f"**{t('versi_dewasa_label')}:** `{maturity}` · _{ARCHETYPES[maturity]}_"
+                )
 
         st.caption(t("storage_note"))
         if st.button(t("reset"), use_container_width=True):
