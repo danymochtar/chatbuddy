@@ -37,6 +37,8 @@ def save_session_to_storage() -> None:
             "zodiac": st.session_state.zodiac,
             "messages": st.session_state.messages,
             "opening_generated": st.session_state.opening_generated,
+            "cached_pages": st.session_state.get("cached_pages", {}),
+            "relationships": st.session_state.get("relationships", []),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data))
     except Exception:
@@ -58,6 +60,8 @@ def load_session_from_storage() -> bool:
         st.session_state.zodiac = data.get("zodiac")
         st.session_state.messages = data.get("messages", [])
         st.session_state.opening_generated = data.get("opening_generated", False)
+        st.session_state.cached_pages = data.get("cached_pages", {})
+        st.session_state.relationships = data.get("relationships", [])
         return True
     except Exception:
         return False
@@ -218,54 +222,129 @@ def system_prompt(profile: dict, zodiac: dict | None, today: date) -> list:
 
 def opening_prompt() -> str:
     return (
-        "Bikinin opening hangat dan personal buat gw — tone kyk temen deket yg udah kenal "
-        "gw lama, bukan reading numerologi/astrologi. **JANGAN sebut istilah teknis** "
-        "(Life Path, Sun, Moon, zodiac, rasi bintang, dst). Pake heading Markdown ## supaya "
-        "jelas sectionsnya:\n\n"
-        "## 👋 Halo [Nama Depan]\n"
-        "Mulai dengan **1-2 kalimat synthesis** yang blend karakter gw jadi SATU KESELURUHAN — "
-        "bukan list sifat satu-satu, tapi rangkaian yang mengalir, nunjukin dinamika antara "
-        "misi hidup + bakat bawaan + panggilan hati + aura luar + talenta lahir. Pake kata "
-        "sambung yang ngasih dinamika: 'yang', 'dan', 'tapi', 'walau', 'makanya', 'di "
-        "dalemnya', 'di luar', dst. **WAJIB sertakan angka dalam kurung** setelah trait-nya — "
-        "ini selain bikin referensinya clear, juga bikin user tau angka-angka penting mereka.\n\n"
-        "Contoh tone (**JANGAN copy persis, selalu tailored ke user**):\n"
+        "Bikinin opening yang SINGKAT, hangat, personal — tone temen deket. "
+        "**JANGAN sebut istilah teknis** (Life Path, Sun, Moon, zodiac, rasi bintang, dst). "
+        "3 section aja, pake heading Markdown ##:\n\n"
+        "## 👋 Halo [Nickname]\n"
+        "1-2 kalimat synthesis yg blend karakter gw jadi SATU KESELURUHAN — mengalir, pake "
+        "kata sambung ('yang', 'tapi', 'di dalemnya', 'walau'), **WAJIB sertakan angka dalam "
+        "kurung** setelah trait-nya.\n\n"
+        "Contoh tone (JANGAN copy persis):\n"
         "- _\"Hi Dany, lu itu born to be leader (1) yang natural-nya mengalir bebas (5), "
         "tapi di dalem jiwa lo itu penyayang banget (6) — dengan aura ambisius yang kerasa (8) "
-        "plus talenta buat bikin dampak besar (8).\"_\n"
-        "- _\"Hi Budi, kalo gw baca lo itu orang yang lahir buat ngayomi keluarga (6), "
-        "dengan bakat ekspresi & kreativitas yang menular (3), tapi ambisi buat jadi powerful "
-        "sebenernya kerasa juga (8) — aura luar yg stable (4) nutupin kompleksitas itu.\"_\n\n"
-        "Kalo ada angka master (11/22/33), kasih emphasis (master vibe). "
-        "Kalo 2 angka sama (kyk personality & birthday sama-sama 8), blend jadi penekanan "
-        "kuat pada tema itu.\n\n"
+        "plus talenta buat bikin dampak besar (8).\"_\n\n"
+        "Angka master (11/22/33) kasih emphasis. Angka dobel blend jadi penekanan kuat.\n\n"
         "## 🌞 Vibe Hari Ini\n"
-        "Sebutin hari & tanggal. Rangkai energi hari ini + vibe bulan ini + tema tahun ini "
-        "jadi satu cerita mengalir. Paling tebal di energi hari ini — 2-3 kalimat yg bikin "
-        "gw bisa ngerasain energinya.\n\n"
-        "## 👤 Kompleksitas Karakter Lo\n"
-        "Zoom-in lebih dalem dari intro tadi. Ulasan 2-3 paragraf soal paradoks/harmoni "
-        "antar aspek (misi vs bakat, aura luar vs panggilan hati dalem, dst). **Gabungin juga "
-        "lapisan cara tampil / emosi internal / first impression** dari data tambahan — tapi "
-        "tanpa pernah sebut 'astrologi' atau nama rasi.\n\n"
-        "## 💡 Arah & Tips Buat Lo\n"
-        "SATU section yang blend tips hari ini + bulan ini + tahun ini jadi panduan yang "
-        "saling nyambung. Alurnya: dari immediate (hari ini) → zoom-out (bulan ini) → "
-        "chapter besar (tahun ini). Format bebas (bisa bullet, bisa paragraf pendek) tapi "
-        "hubungkan satu sama lain — bukan 3 list terpisah.\n\n"
-        "Contoh alur:\n"
-        "- Hari ini: [aksi spesifik sesuai energi hari ini + karakter]\n"
-        "- Beberapa minggu ke depan: [tema bulan ini + cara navigatenya]\n"
-        "- Chapter tahun ini: [tema tahun + apa yg bijak difokusin / di-release]\n"
-        "- Hati-hati kalo: [warning dari karakter/debts yg relevan]\n\n"
-        "Harus 4-6 poin total. Spesifik, actionable — bukan 'be yourself' tapi aksi yg "
-        "bisa langsung dikerjain. Kalo ada karmic debt yg relevan sama energi sekarang, "
-        "selipin halus.\n\n"
+        "Sebutin hari & tanggal. Rangkai energi hari ini jadi cerita singkat (1 paragraf) + "
+        "LANGSUNG lanjut dengan **3-4 tips praktis buat hari ini** (bullet points) — yg "
+        "nyambung sama energi hari ini + karakter lo. Tips harus spesifik & actionable, bukan "
+        "'be yourself' tapi aksi yg bisa langsung dikerjain.\n\n"
         "## 💬 Yuk Ngobrol\n"
-        "Tutup hangat — undang ngobrol soal karir, cinta, keluarga, atau hal spesifik.\n\n"
-        "**Style:** casual 'lo/gw', hangat, sedikit humor kalo pas. **Zero jargon teknis**. "
-        "Astrologi WAJIB invisible."
+        "1-2 kalimat invitation — undang ngobrol bebas, plus kasih tau kalau ada analisa "
+        "lebih dalem (karakter, PR hidup, arah bulan/tahun, compatibility sama orang deket) "
+        "bisa diakses lewat **menu di sidebar kiri**. Singkat aja.\n\n"
+        "**Style:** casual 'lo/gw', hangat. **Zero jargon teknis**. Astrologi WAJIB invisible."
     )
+
+
+def kompleksitas_prompt() -> str:
+    return (
+        "Tulis **analisa karakter mendalam** tentang gw (3-5 paragraf storytelling, bukan "
+        "list). Gabungin semua lapisan jadi cerita utuh 'siapa lo': misi hidup, bakat bawaan, "
+        "panggilan hati, aura luar, talenta lahir, PLUS lapisan cara tampil / emosi internal "
+        "/ first impression (dari data lahir tambahan). Tunjukin:\n"
+        "- Paradoks / harmoni antar aspek (misi vs bakat, luar vs dalem)\n"
+        "- Kekuatan natural lo\n"
+        "- Shadow / tendency yg harus diwaspadain\n"
+        "- Bagaimana semua puzzle-piece ini nyambung jadi karakter unik lo\n\n"
+        "Pake heading ## di atas (misal `## 👤 Kompleksitas Karakter Lo`). Sertakan angka "
+        "dalam kurung saat nyebut trait kunci. **Zero istilah teknis.** Astrologi WAJIB "
+        "invisible — sampein sebagai observasi biasa, bukan reading."
+    )
+
+
+def inner_prompt() -> str:
+    return (
+        "Tulis tentang **aspek dalam** gw — hal-hal yg ga kelihatan dari luar tapi jadi motor "
+        "dalem. Fokus ke:\n"
+        "1. **Obsesi tersembunyi** (drive yg paling sering nongol, dari pola nama lo) — "
+        "ini yg sering keluar di pilihan-pilihan kecil lo sehari-hari.\n"
+        "2. **Versi dewasa lo** (siapa lo akan grow into setelah umur ~35) — bagaimana "
+        "karakter lo bakal matang.\n"
+        "3. Dinamika antara siapa lo sekarang vs siapa lo bakal jadi.\n\n"
+        "Pake heading ## di atas (misal `## 🔍 Aspek Dalam Lo`). 3-4 paragraf storytelling. "
+        "Angka dalam kurung saat nyebut trait. **Zero istilah teknis** ('hidden passion', "
+        "'maturity number' dll JANGAN disebut)."
+    )
+
+
+def karmic_prompt() -> str:
+    return (
+        "Tulis tentang **PR hidup** lo — pelajaran besar yg harus dikuasain. Sampein sebagai "
+        "'rem yang harus dijaga' atau 'tema yg harus lo embrace'. Fokus:\n"
+        "1. Kalo ada karmic debt (13/14/16/19) di aspek tertentu — jelasin sebagai tantangan "
+        "spesifik yg karma-related (ini rem, bukan kutukan). Kasih cara ngehadapinnya.\n"
+        "2. Kalo ada angka absen dari nama (karmic lessons) — jelasin sebagai tema yg absen "
+        "dari karakter bawaan lo, justru jadi pelajaran yg lo harus aktif latih.\n"
+        "3. Kalo lessons kosong / debt kosong — jelasin bahwa karakter lo udah relatively "
+        "balanced di aspek itu, PR-nya di level yg lebih halus.\n\n"
+        "Pake heading ## di atas (misal `## 🎓 PR Hidup Lo`). 2-4 paragraf. Tone: suportif, "
+        "bukan nakut-nakutin. **Zero istilah teknis**."
+    )
+
+
+def arah_prompt() -> str:
+    return (
+        "Tulis **panduan arah buat bulan ini + tahun ini** — dua section terpisah tapi "
+        "terkait. Jangan bahas energi hari ini (udah di chat utama). Fokus:\n\n"
+        "## 🗓️ Bulan Ini\n"
+        "1 paragraf soal tema/vibe bulan ini. Terus 3-4 tips actionable buat sebulan ke "
+        "depan — apa yg cocok diprioritize, apa yg bijak dihindari.\n\n"
+        "## 🌱 Tahun Ini\n"
+        "1 paragraf soal chapter besar tahun ini. Terus 3-4 tips zoom-out — apa yg bijak "
+        "difokusin / di-release sepanjang tahun.\n\n"
+        "Hubungkan bulan ↔ tahun (bulan ini adalah microstep dari tahun). Specific & "
+        "actionable. **Zero istilah teknis**."
+    )
+
+
+def relationship_prompt(partner_profile: dict) -> str:
+    nick = partner_profile.get("nickname") or partner_profile["full_name"].split()[0]
+    p_lines = [
+        f"Nama: {partner_profile['full_name']} (panggil: {nick})",
+        f"Tanggal lahir: {partner_profile['dob']}",
+        f"Misi hidup: {partner_profile['life_path']} ({ARCHETYPES[partner_profile['life_path']]}) — {partner_profile['meanings']['life_path']}",
+        f"Bakat bawaan: {partner_profile['expression']} ({ARCHETYPES[partner_profile['expression']]}) — {partner_profile['meanings']['expression']}",
+        f"Panggilan hati: {partner_profile['soul_urge']} ({ARCHETYPES[partner_profile['soul_urge']]}) — {partner_profile['meanings']['soul_urge']}",
+        f"Aura luar: {partner_profile['personality']} ({ARCHETYPES[partner_profile['personality']]}) — {partner_profile['meanings']['personality']}",
+        f"Talenta lahir: {partner_profile['birthday']} ({ARCHETYPES[partner_profile['birthday']]}) — {partner_profile['meanings']['birthday']}",
+    ]
+    partner_block = "\n".join(p_lines)
+    return (
+        f"Gw mau tau gimana dinamika gw sama orang ini:\n\n{partner_block}\n\n"
+        "Bikinin analisa compatibility (2-4 paragraf storytelling + 1 list tips) yg blend "
+        "karakter gw vs karakter dia:\n\n"
+        "## 💫 Chemistry Karakter\n"
+        "Gimana personality lo dua nyambung atau gesekan. Sebutin aspek mana yg klop (dan "
+        "kenapa), aspek mana yg bisa bikin friksi. Tunjukin dinamika kayak yin-yang: yg "
+        "saling komplemen vs yg mirip-mirip.\n\n"
+        "## 💬 Cara Komunikasi\n"
+        "Gimana lo dua sebaiknya ngomong satu sama lain. Tone lo sendiri kyk apa, tone dia "
+        "kyk apa, gimana ketemuin tengahnya.\n\n"
+        "## 🌱 Growth Together\n"
+        "2-3 tips actionable buat bikin hubungan ini tumbuh. Yg harus lo waspadain vs yg "
+        "harus lo hargain.\n\n"
+        "Style: temen curhat, bukan therapy session kaku. **Zero istilah teknis** (jangan "
+        "sebut Life Path dll — blend halus). Pake angka dalam kurung kalo perlu biar clear."
+    )
+
+
+def build_partner_profile(
+    full_name: str,
+    dob: date,
+    nickname: str | None = None,
+) -> dict:
+    return build_profile(full_name, dob, nickname=nickname)
 
 
 def to_anthropic_messages(messages: list) -> list:
@@ -313,6 +392,107 @@ def render_profile_panel(profile: dict) -> None:
     st.divider()
 
 
+def render_cached_text_page(
+    page_key: str,
+    prompt_fn,
+    profile: dict,
+    zodiac: dict | None,
+) -> None:
+    cached = st.session_state.get("cached_pages", {})
+    text = cached.get(page_key)
+
+    if text:
+        st.markdown(text)
+        col1, col2 = st.columns([1, 4])
+        if col1.button("🔄 Refresh", key=f"refresh_{page_key}"):
+            cached.pop(page_key, None)
+            st.session_state.cached_pages = cached
+            save_session_to_storage()
+            st.rerun()
+    else:
+        placeholder = st.empty()
+        new_text = stream_assistant(
+            messages_for_api=[{"role": "user", "content": prompt_fn()}],
+            system=system_prompt(profile, zodiac, today_local()),
+            placeholder=placeholder,
+        )
+        cached[page_key] = new_text
+        st.session_state.cached_pages = cached
+        save_session_to_storage()
+
+
+def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
+    st.header("💑 Relationship")
+    st.caption(
+        "Liat dinamika karakter lo sama orang deket — pasangan, sahabat, keluarga. "
+        "Tambahin nama & tanggal lahir mereka, nanti gw analisis chemistry-nya."
+    )
+
+    with st.expander("➕ Tambah orang baru"):
+        with st.form("partner_form", clear_on_submit=True):
+            p_name = st.text_input("Nama lengkap mereka")
+            p_nick = st.text_input("Panggilan (opsional)", placeholder="Default: nama depan")
+            p_dob = st.date_input(
+                "Tanggal lahir mereka",
+                min_value=date(1900, 1, 1),
+                max_value=date.today(),
+                value=date(2000, 1, 1),
+                format="DD/MM/YYYY",
+            )
+            p_relation = st.selectbox(
+                "Hubungan kalian",
+                ["pasangan", "sahabat", "keluarga", "temen kerja", "gebetan", "lainnya"],
+            )
+            add = st.form_submit_button("Analisa →", use_container_width=True)
+
+        if add:
+            if not p_name.strip() or len(p_name.strip()) < 2:
+                st.error("Nama-nya harus diisi 🙏")
+            else:
+                partner = build_partner_profile(
+                    p_name.strip(), p_dob,
+                    nickname=p_nick.strip() or None,
+                )
+                with st.spinner("Gw baca dulu dinamikanya..."):
+                    placeholder = st.empty()
+                    analysis = stream_assistant(
+                        messages_for_api=[{"role": "user", "content": relationship_prompt(partner)}],
+                        system=system_prompt(profile, zodiac, today_local()),
+                        placeholder=placeholder,
+                    )
+                rels = st.session_state.get("relationships", [])
+                rels.append({
+                    "id": datetime.now().strftime("r_%Y%m%d%H%M%S"),
+                    "partner_name": p_name.strip(),
+                    "partner_nick": p_nick.strip() or p_name.strip().split()[0],
+                    "partner_dob": p_dob.isoformat(),
+                    "partner_profile": partner,
+                    "relation_type": p_relation,
+                    "analysis": analysis,
+                    "created_at": datetime.now().isoformat(),
+                })
+                st.session_state.relationships = rels
+                save_session_to_storage()
+                st.rerun()
+
+    rels = st.session_state.get("relationships", [])
+    if not rels:
+        st.info("Belum ada orang yang dianalisa. Tambahin di atas ☝️")
+        return
+
+    for i, rel in enumerate(rels):
+        with st.container(border=True):
+            header_cols = st.columns([5, 1])
+            header_cols[0].subheader(f"💫 {rel['partner_nick']} · _{rel['relation_type']}_")
+            if header_cols[1].button("🗑️", key=f"del_rel_{rel['id']}"):
+                rels.pop(i)
+                st.session_state.relationships = rels
+                save_session_to_storage()
+                st.rerun()
+            st.caption(f"{rel['partner_name']} · lahir {rel['partner_dob']}")
+            st.markdown(rel["analysis"])
+
+
 def build_full_profile(
     full_name: str,
     dob: date,
@@ -355,6 +535,12 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "opening_generated" not in st.session_state:
     st.session_state.opening_generated = False
+if "cached_pages" not in st.session_state:
+    st.session_state.cached_pages = {}
+if "relationships" not in st.session_state:
+    st.session_state.relationships = []
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "chat"
 
 if "storage_loaded" not in st.session_state:
     if st.session_state.profile is None:
@@ -420,47 +606,34 @@ else:
     profile = st.session_state.profile
     zodiac = st.session_state.zodiac
 
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-
-    if not st.session_state.opening_generated:
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full_text = stream_assistant(
-                messages_for_api=[{"role": "user", "content": opening_prompt()}],
-                system=system_prompt(profile, zodiac, today_local()),
-                placeholder=placeholder,
-            )
-        st.session_state.messages.append({"role": "assistant", "content": full_text})
-        st.session_state.opening_generated = True
-        save_session_to_storage()
-        st.rerun()
-
-    user_input = st.chat_input("Tulis pertanyaan atau cerita lo...")
-    if user_input:
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.markdown(user_input)
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full_text = stream_assistant(
-                messages_for_api=to_anthropic_messages(st.session_state.messages),
-                system=system_prompt(profile, zodiac, today_local()),
-                placeholder=placeholder,
-            )
-        st.session_state.messages.append({"role": "assistant", "content": full_text})
-        save_session_to_storage()
-
     with st.sidebar:
-        st.header("Sesi")
         nick_display = profile.get("nickname") or profile["full_name"].split()[0]
-        st.write(f"**{nick_display}** _({profile['full_name']})_")
-        st.write(f"Lahir: {profile['dob']}")
-        if zodiac and zodiac.get("birth_time"):
-            st.write(f"Jam: {zodiac['birth_time']}")
-        if zodiac and zodiac.get("birth_city"):
-            st.write(f"Kota: {zodiac['birth_city']}")
+        st.markdown(f"### 👋 Hi, **{nick_display}**")
+        st.caption(f"_{profile['full_name']} · lahir {profile['dob']}_")
+
+        st.divider()
+
+        nav_items = [
+            ("💬", "Chat", "chat"),
+            ("👤", "Karakter", "karakter"),
+            ("🔍", "Aspek Dalam", "inner"),
+            ("🎓", "PR Hidup", "karmic"),
+            ("🗓️", "Arah Bulan & Tahun", "arah"),
+            ("💑", "Relationship", "relationship"),
+        ]
+        for emoji, label, key in nav_items:
+            is_active = st.session_state.current_page == key
+            prefix = "✓ " if is_active else ""
+            if st.button(
+                f"{prefix}{emoji} {label}",
+                key=f"nav_{key}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary",
+            ):
+                st.session_state.current_page = key
+                st.rerun()
+
+        st.divider()
 
         with st.expander("📊 Angka utama"):
             for label, key in [
@@ -473,35 +646,63 @@ else:
                 num = profile[key]
                 st.markdown(f"**{label}:** `{num}` · _{ARCHETYPES[num]}_")
 
-        with st.expander("🔍 Aspek dalam"):
-            debts = profile.get("karmic_debts") or {}
-            debt_labels = {
-                "life_path": "Misi Hidup", "expression": "Bakat Bawaan",
-                "soul_urge": "Panggilan Hati", "personality": "Aura Luar",
-            }
-            active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
-            if active_debts:
-                st.markdown("**PR hidup (karmic debt):**")
-                for lbl, val in active_debts:
-                    st.markdown(f"- {lbl}: `{val}`")
-            lessons = profile.get("karmic_lessons") or []
-            if lessons:
-                st.markdown(f"**Pelajaran hidup:** {', '.join(str(n) for n in lessons)}")
-            else:
-                st.markdown("**Pelajaran hidup:** lengkap (semua angka ada di nama)")
-            passion = profile.get("hidden_passion") or []
-            if passion:
-                names = ", ".join(f"`{n}` ({ARCHETYPES[n]})" for n in passion)
-                st.markdown(f"**Obsesi tersembunyi:** {names}")
-            maturity = profile.get("maturity")
-            if maturity:
-                st.markdown(f"**Versi dewasa lo:** `{maturity}` · _{ARCHETYPES[maturity]}_")
-
-        st.caption("💾 Sesi lo auto-tersimpen di browser — bisa tutup tab, balik lagi kapan aja.")
+        st.caption("💾 Sesi tersimpen di browser lo.")
         if st.button("Reset sesi", use_container_width=True):
             clear_session_storage()
-            st.session_state.profile = None
-            st.session_state.zodiac = None
-            st.session_state.messages = []
-            st.session_state.opening_generated = False
+            for key in [
+                "profile", "zodiac", "messages", "opening_generated",
+                "cached_pages", "relationships", "current_page",
+            ]:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.rerun()
+
+    page = st.session_state.current_page
+
+    if page == "chat":
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        if not st.session_state.opening_generated:
+            with st.chat_message("assistant"):
+                placeholder = st.empty()
+                full_text = stream_assistant(
+                    messages_for_api=[{"role": "user", "content": opening_prompt()}],
+                    system=system_prompt(profile, zodiac, today_local()),
+                    placeholder=placeholder,
+                )
+            st.session_state.messages.append({"role": "assistant", "content": full_text})
+            st.session_state.opening_generated = True
+            save_session_to_storage()
+            st.rerun()
+
+        user_input = st.chat_input("Tulis pertanyaan atau cerita lo...")
+        if user_input:
+            st.session_state.messages.append({"role": "user", "content": user_input})
+            with st.chat_message("user"):
+                st.markdown(user_input)
+            with st.chat_message("assistant"):
+                placeholder = st.empty()
+                full_text = stream_assistant(
+                    messages_for_api=to_anthropic_messages(st.session_state.messages),
+                    system=system_prompt(profile, zodiac, today_local()),
+                    placeholder=placeholder,
+                )
+            st.session_state.messages.append({"role": "assistant", "content": full_text})
+            save_session_to_storage()
+
+    elif page == "karakter":
+        render_cached_text_page("karakter", kompleksitas_prompt, profile, zodiac)
+
+    elif page == "inner":
+        render_cached_text_page("inner", inner_prompt, profile, zodiac)
+
+    elif page == "karmic":
+        render_cached_text_page("karmic", karmic_prompt, profile, zodiac)
+
+    elif page == "arah":
+        render_cached_text_page("arah", arah_prompt, profile, zodiac)
+
+    elif page == "relationship":
+        render_relationship_page(profile, zodiac)
