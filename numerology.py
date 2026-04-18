@@ -78,6 +78,22 @@ def personal_day(dob: date, today: date) -> int:
     return reduce_number(pm + cd)
 
 
+ARCHETYPES = {
+    1: "Si Leader",
+    2: "Si Pendamai",
+    3: "Si Kreatif",
+    4: "Si Pekerja",
+    5: "Si Bebas",
+    6: "Si Penyayang",
+    7: "Si Pemikir",
+    8: "Si Ambisius",
+    9: "Si Idealis",
+    11: "Si Visioner",
+    22: "Si Pembangun",
+    33: "Si Guru",
+}
+
+
 MEANINGS = {
     1: "Pemimpin, independen, ambisius, pionir",
     2: "Diplomat, harmonis, sensitif, kooperatif",

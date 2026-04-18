@@ -1,13 +1,14 @@
 import os
-from datetime import date
+from datetime import date, datetime, time
 
 import anthropic
 import streamlit as st
 
-from numerology import build_profile, today_local
+from numerology import ARCHETYPES, build_profile, today_local
+from zodiac import JAKARTA_COORDS, SIGN_TRAITS, compute_chart, geocode_city, sun_sign
 
 MODEL = "claude-haiku-4-5"
-MAX_TOKENS = 2048
+MAX_TOKENS = 3000
 
 
 def get_client() -> anthropic.Anthropic:
@@ -19,46 +20,118 @@ def get_client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=api_key)
 
 
-def system_prompt(profile: dict) -> list:
-    today = today_local()
-    base = (
-        "Lo adalah ChatBuddy — AI teman deket yang ngerti numerologi Pythagorean "
-        "(sistem Hans Decoz / World Numerology) dan pake data numerologi user "
-        "buat ngejawab pertanyaan mereka soal hidup, personality, karir, percintaan, "
-        "pertemanan, keluarga, dan masalah personal lainnya.\n\n"
-        "Gaya ngomong lo:\n"
-        "- Casual, santai, kyk temen deket (pake 'lo/gw' atau 'kamu/aku' sesuai vibe user)\n"
-        "- Empatik, ga judgemental, dengerin dulu sebelum ngasih saran\n"
-        "- Jujur tapi hangat — kalau ada sisi 'gelap' dari angka, sampein dengan cara yang membangun\n"
-        "- Hindari jargon numerologi yang terlalu berat, jelasin pake bahasa sehari-hari\n"
-        "- Jangan kyk horoskop murahan — kasih insight yang nyambung sama situasi user\n"
-        "- Kalau relevan, kaitin sama vibe hari ini (Personal Day) biar advice-nya kontekstual\n\n"
-        "Aturan penting:\n"
-        "- Numerologi adalah lensa buat refleksi diri, bukan ramalan pasti. Ingetin user kalau perlu.\n"
-        "- Kalau user cerita masalah berat (mental health, kekerasan, krisis), tetap suportif "
-        "tapi arahin juga ke bantuan profesional.\n"
-        "- Jawaban lo harus selalu nyambung sama profil numerologi di bawah ini.\n\n"
-        f"=== PROFIL NUMEROLOGI USER ===\n"
-        f"Nama: {profile['full_name']}\n"
-        f"Tanggal Lahir: {profile['dob']}\n\n"
-        f"Life Path: {profile['life_path']} — {profile['meanings']['life_path']}\n"
-        f"Expression/Destiny: {profile['expression']} — {profile['meanings']['expression']}\n"
-        f"Soul Urge: {profile['soul_urge']} — {profile['meanings']['soul_urge']}\n"
-        f"Personality: {profile['personality']} — {profile['meanings']['personality']}\n"
-        f"Birthday: {profile['birthday']} — {profile['meanings']['birthday']}\n\n"
-        "Arti singkat:\n"
-        "- Life Path: tujuan & pelajaran hidup utama\n"
-        "- Expression: bakat bawaan & cara natural lo berkontribusi ke dunia\n"
-        "- Soul Urge: motivasi terdalam, apa yang bikin lo bahagia di hati\n"
-        "- Personality: gimana orang lain lihat lo di first impression\n"
-        "- Birthday: talenta spesifik yang lo bawa sejak lahir\n\n"
-        f"=== KONTEKS HARI INI ({today.strftime('%A, %d %B %Y')}) ===\n"
-        f"Personal Year {today.year}: {profile['personal_year']} — {profile['meanings']['personal_year']}\n"
-        f"Personal Day hari ini: {profile['personal_day']} — {profile['meanings']['personal_day']}\n\n"
-        "Personal Day = vibe energetik hari ini. Bisa lo jadiin referensi saat user tanya "
-        "soal timing / keputusan hari ini.\n"
+def format_today_id(today: date) -> str:
+    days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+    months = [
+        "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    ]
+    return f"{days[today.weekday()]}, {today.day} {months[today.month]} {today.year}"
+
+
+def base_persona() -> str:
+    return (
+        "Lo adalah **ChatBuddy** — teman curhat AI yang *diam-diam* pake numerologi Pythagorean "
+        "(sistem Hans Decoz / World Numerology) dan astrologi Barat sebagai lensa baca "
+        "karakter + vibe user.\n\n"
+        "**Tone:**\n"
+        "- User nganggep lo temen curhat, BUKAN numerologist / astrologer.\n"
+        "- **JANGAN sebut istilah teknis**: 'Life Path', 'Expression', 'Soul Urge', "
+        "'Personality Number', 'Birthday Number', 'Personal Year/Month/Day', 'Sun sign', "
+        "'Moon sign', 'Rising', 'Ascendant', 'natal chart', 'zodiac', 'astrologi', "
+        "'numerologi', nama-nama rasi bintang (Taurus, Cancer, dll).\n"
+        "- **Astrologi WAJIB invisible** — banyak orang skeptis. Sampein insight dari "
+        "Sun/Moon/Rising sebagai observasi karakter, bukan sebagai reading. Contoh: bukan "
+        "'Moon Sagittarius lo bikin lo butuh kebebasan', tapi 'di dalem, lo itu butuh banget "
+        "ruang buat gerak, ga suka dikurung rutinitas'.\n"
+        "- Numerologi boleh disinggung halus ('pola angka lahir lo'), tapi hindari istilah "
+        "teknis + jangan sebut angkanya.\n"
+        "- Pake bahasa karakter: 'misi hidup', 'bakat bawaan', 'panggilan hati', 'aura luar', "
+        "'energi hari ini', 'vibe bulan ini', 'tema tahun ini'.\n\n"
+        "**Gaya ngomong:**\n"
+        "- Casual temen deket — 'lo/gw' atau 'kamu/aku' nyesuain vibe user\n"
+        "- Empatik, ga judgemental, validate feelings dulu sebelum kasih saran\n"
+        "- Pake paragraf naratif; bullet cuma buat tips / list yang emang perlu\n\n"
+        "**Aturan:**\n"
+        "- Ini lensa refleksi, bukan ramalan pasti — ingetin halus kalau user treating ini as "
+        "future prediction.\n"
+        "- Kalau user cerita masalah berat (mental health, krisis), tetep suportif tapi arahin "
+        "ke bantuan profesional."
     )
-    return [{"type": "text", "text": base, "cache_control": {"type": "ephemeral"}}]
+
+
+def profile_block(profile: dict, zodiac: dict | None) -> str:
+    lines = [
+        "=== PROFIL USER (konteks internal — jangan expose istilahnya) ===",
+        f"Nama: {profile['full_name']}",
+        f"Tanggal lahir: {profile['dob']}",
+        "",
+        "-- Baca karakter (JANGAN sebut istilah teknisnya) --",
+        f"Misi hidup / tema besar: {profile['meanings']['life_path']}",
+        f"Bakat bawaan / karakter natural: {profile['meanings']['expression']}",
+        f"Panggilan hati / apa yg dia butuh buat bahagia: {profile['meanings']['soul_urge']}",
+        f"Aura luar / first impression: {profile['meanings']['personality']}",
+        f"Talenta spesifik dari hari lahir: {profile['meanings']['birthday']}",
+    ]
+    if zodiac and zodiac.get("sun"):
+        lines += [
+            "",
+            "-- Lapisan tambahan (WAJIB DISEMBUNYIKAN — blend ke observasi) --",
+            f"Cara dia tampil/bertindak (ego eksternal): {SIGN_TRAITS[zodiac['sun']]}",
+        ]
+        if zodiac.get("moon"):
+            lines.append(f"Kebutuhan emosi internal / comfort zone: {SIGN_TRAITS[zodiac['moon']]}")
+        if zodiac.get("rising"):
+            lines.append(f"Vibe pertama orang liat dari dia: {SIGN_TRAITS[zodiac['rising']]}")
+    return "\n".join(lines)
+
+
+def daily_block(profile: dict, today: date) -> str:
+    return (
+        f"=== VIBE HARI INI ({format_today_id(today)}) ===\n"
+        f"Tema tahun ini: {profile['meanings']['personal_year']}\n"
+        f"Vibe bulan ini (angka {profile['personal_month']}): ulas berdasarkan tema angka\n"
+        f"Energi hari ini: {profile['meanings']['personal_day']}\n\n"
+        "Pake ini buat kasih konteks timing dan tips praktis. "
+        "JANGAN sebut 'Personal Day/Month/Year' — sampein kyk lo emang 'tau' vibe-nya."
+    )
+
+
+def system_prompt(profile: dict, zodiac: dict | None, today: date) -> list:
+    text = "\n\n".join([base_persona(), profile_block(profile, zodiac), daily_block(profile, today)])
+    return [{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}]
+
+
+def opening_prompt() -> str:
+    return (
+        "Bikinin opening hangat dan personal buat gw — tone kyk temen deket yg udah kenal "
+        "gw lama, bukan reading numerologi/astrologi. **JANGAN sebut istilah teknis**. "
+        "Pake heading Markdown ## supaya jelas sectionsnya:\n\n"
+        "## 🌞 Vibe Hari Ini\n"
+        "Sapa gw pake nama depan, sebutin hari & tanggal. Rangkai energi hari ini + vibe bulan "
+        "ini + tema tahun ini jadi **satu cerita mengalir** (bukan daftar). Paling tebal di "
+        "energi hari ini — 2-3 kalimat yg bikin gw bisa ngerasain energinya.\n\n"
+        "## 👤 Siapa Lo, Menurut Gw\n"
+        "Ulasan karakter — cerita 'siapa lo'. Gabungin observasi dari misi hidup, bakat "
+        "bawaan, panggilan hati, aura luar, talenta lahir **+ lapisan cara tampil / emosi "
+        "internal / first impression** jadi narasi utuh. Highlight paradoks/harmoni kalo ada. "
+        "Min 2 paragraf.\n\n"
+        "## 💡 Tips Buat Hari Ini\n"
+        "3-4 tips praktis yang nyambung sama energi hari ini + karakter lo. Bullet points. "
+        "Spesifik & actionable. Contoh bentuk: 'Hari bagus buat...', 'Hindarin dulu...', "
+        "'Kalo ada keputusan soal X, pertimbangin...'.\n\n"
+        "## 🗓️ Tips Bulan Ini\n"
+        "2-3 tips zoom-out buat sebulan. Tema besarnya apa? Apa yg cocok di-prioritize / "
+        "dihindari bulan ini?\n\n"
+        "## 🌱 Tema Tahun Ini\n"
+        "1 paragraf soal tema besar tahun ini — apa chapter yg lo jalanin, apa yang bijak "
+        "difokusin / di-release sepanjang tahun.\n\n"
+        "## 💬 Yuk Ngobrol\n"
+        "Tutup hangat — undang ngobrol soal karir, cinta, keluarga, atau hal spesifik yg "
+        "nyambung sama vibe hari ini.\n\n"
+        "**Style:** casual 'lo/gw', hangat, sedikit humor kalo pas. **Zero jargon teknis**. "
+        "Astrologi WAJIB invisible."
+    )
 
 
 def to_anthropic_messages(messages: list) -> list:
@@ -72,55 +145,81 @@ def to_anthropic_messages(messages: list) -> list:
     return result
 
 
-def render_profile(profile: dict) -> None:
+def stream_assistant(messages_for_api: list, system: list, placeholder) -> str:
+    client = get_client()
+    full_text = ""
+    with client.messages.stream(
+        model=MODEL,
+        max_tokens=MAX_TOKENS,
+        system=system,
+        messages=messages_for_api,
+    ) as stream:
+        for text in stream.text_stream:
+            full_text += text
+            placeholder.markdown(full_text + "▌")
+    placeholder.markdown(full_text)
+    return full_text
+
+
+def render_profile_panel(profile: dict) -> None:
     cols = st.columns(5)
-    labels = [
-        ("Life Path", profile["life_path"]),
-        ("Expression", profile["expression"]),
-        ("Soul Urge", profile["soul_urge"]),
-        ("Personality", profile["personality"]),
-        ("Birthday", profile["birthday"]),
+    panels = [
+        ("Misi Hidup", "life_path"),
+        ("Bakat Bawaan", "expression"),
+        ("Panggilan Hati", "soul_urge"),
+        ("Aura Luar", "personality"),
+        ("Talenta Lahir", "birthday"),
     ]
-    for col, (label, num) in zip(cols, labels):
-        col.metric(label, num)
-
-    with st.expander("Arti angka-angka kamu"):
-        for key in ["life_path", "expression", "soul_urge", "personality", "birthday"]:
-            name = key.replace("_", " ").title()
-            st.markdown(f"**{name} ({profile[key]}):** {profile['meanings'][key]}")
-
-
-def initial_reading(profile: dict) -> str:
-    first_name = profile["full_name"].split()[0]
-    today = date.fromisoformat(profile["today"])
-    day_names = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
-    month_names = [
-        "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-    ]
-    today_str = f"{day_names[today.weekday()]}, {today.day} {month_names[today.month]} {today.year}"
-    return (
-        f"## 🌞 Vibe Hari Ini — {today_str}\n\n"
-        f"**Personal Day lo: {profile['personal_day']}** — {profile['meanings']['personal_day']}\n\n"
-        f"_Lagi di **Personal Year {profile['personal_year']}**: {profile['meanings']['personal_year']}_\n\n"
-        f"---\n\n"
-        f"Halo **{first_name}**! Gw ChatBuddy, temen AI lo yang pake lensa numerologi "
-        f"buat ngobrol soal hidup. Udah gw itung angka-angka lo di atas — "
-        f"Life Path lo **{profile['life_path']}** ({profile['meanings']['life_path'].lower()}) "
-        f"jadi benang merah perjalanan hidup lo.\n\n"
-        f"Mau mulai dari mana? Karir, percintaan, pertemanan, keluarga, "
-        f"atau ada yang nyambung sama vibe hari ini? Ceritain aja, gw dengerin."
-    )
+    for col, (label, key) in zip(cols, panels):
+        num = profile[key]
+        with col:
+            st.caption(label)
+            st.markdown(f"### {num}")
+            st.caption(f"_{ARCHETYPES[num]}_")
+    st.divider()
 
 
-st.set_page_config(page_title="ChatBuddy Numerologi", page_icon="🔮", layout="centered")
-st.title("🔮 ChatBuddy Numerologi")
-st.caption("Temen AI lo, dibantu lensa numerologi buat refleksi diri")
+def build_full_profile(
+    full_name: str,
+    dob: date,
+    birth_time: time | None,
+    birth_city: str | None,
+) -> tuple[dict, dict]:
+    profile = build_profile(full_name, dob)
+    zodiac = {
+        "sun": sun_sign(dob),
+        "moon": None,
+        "rising": None,
+        "birth_time": birth_time.strftime("%H:%M") if birth_time else None,
+        "birth_city": birth_city,
+    }
+    if birth_time:
+        lat, lon = JAKARTA_COORDS
+        if birth_city:
+            coords = geocode_city(birth_city)
+            if coords:
+                lat, lon = coords
+        chart = compute_chart(dob, birth_time, lat, lon)
+        if chart:
+            zodiac["sun"] = chart["sun"]
+            zodiac["moon"] = chart["moon"]
+            if birth_city and coords:
+                zodiac["rising"] = chart["rising"]
+    return profile, zodiac
+
+
+st.set_page_config(page_title="ChatBuddy", page_icon="🔮", layout="centered")
+st.title("🔮 ChatBuddy")
+st.caption("Temen AI lo buat refleksi diri")
 
 if "profile" not in st.session_state:
     st.session_state.profile = None
+if "zodiac" not in st.session_state:
+    st.session_state.zodiac = None
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "opening_generated" not in st.session_state:
+    st.session_state.opening_generated = False
 
 if st.session_state.profile is None:
     st.subheader("Kenalan dulu yuk")
@@ -133,55 +232,85 @@ if st.session_state.profile is None:
             value=date(2000, 1, 1),
             format="DD/MM/YYYY",
         )
+        col_time, col_city = st.columns(2)
+        with col_time:
+            birth_time_str = st.text_input("Jam lahir (HH:MM, opsional)", placeholder="contoh 13:30")
+        with col_city:
+            birth_city = st.text_input("Kota lahir (opsional)", placeholder="contoh Jakarta")
         submitted = st.form_submit_button("Mulai ngobrol →", use_container_width=True)
 
     if submitted:
         if not full_name.strip() or len(full_name.strip()) < 2:
             st.error("Nama lengkapnya dong biar bisa dihitung 🙏")
         else:
-            profile = build_profile(full_name.strip(), dob)
+            birth_time_obj = None
+            if birth_time_str.strip():
+                for fmt in ("%H:%M", "%H.%M"):
+                    try:
+                        birth_time_obj = datetime.strptime(birth_time_str.strip(), fmt).time()
+                        break
+                    except ValueError:
+                        continue
+                if birth_time_obj is None:
+                    st.error("Format jam lahir salah. Pake `HH:MM` ya (contoh `13:30`) atau kosongin.")
+                    st.stop()
+            profile, zodiac = build_full_profile(
+                full_name.strip(),
+                dob,
+                birth_time_obj,
+                birth_city.strip() or None,
+            )
             st.session_state.profile = profile
-            st.session_state.messages = [
-                {"role": "assistant", "content": initial_reading(profile)}
-            ]
+            st.session_state.zodiac = zodiac
+            st.session_state.messages = []
+            st.session_state.opening_generated = False
             st.rerun()
 else:
     profile = st.session_state.profile
-    render_profile(profile)
-    st.divider()
+    zodiac = st.session_state.zodiac
+    render_profile_panel(profile)
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+    if not st.session_state.opening_generated:
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            full_text = stream_assistant(
+                messages_for_api=[{"role": "user", "content": opening_prompt()}],
+                system=system_prompt(profile, zodiac, today_local()),
+                placeholder=placeholder,
+            )
+        st.session_state.messages.append({"role": "assistant", "content": full_text})
+        st.session_state.opening_generated = True
+        st.rerun()
 
     user_input = st.chat_input("Tulis pertanyaan atau cerita lo...")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.markdown(user_input)
-
-        client = get_client()
         with st.chat_message("assistant"):
             placeholder = st.empty()
-            full_text = ""
-            with client.messages.stream(
-                model=MODEL,
-                max_tokens=MAX_TOKENS,
-                system=system_prompt(profile),
-                messages=to_anthropic_messages(st.session_state.messages),
-            ) as stream:
-                for text in stream.text_stream:
-                    full_text += text
-                    placeholder.markdown(full_text + "▌")
-            placeholder.markdown(full_text)
-
+            full_text = stream_assistant(
+                messages_for_api=to_anthropic_messages(st.session_state.messages),
+                system=system_prompt(profile, zodiac, today_local()),
+                placeholder=placeholder,
+            )
         st.session_state.messages.append({"role": "assistant", "content": full_text})
 
     with st.sidebar:
         st.header("Sesi")
         st.write(f"**{profile['full_name']}**")
         st.write(f"Lahir: {profile['dob']}")
+        if zodiac and zodiac.get("birth_time"):
+            st.write(f"Jam: {zodiac['birth_time']}")
+        if zodiac and zodiac.get("birth_city"):
+            st.write(f"Kota: {zodiac['birth_city']}")
         if st.button("Reset sesi", use_container_width=True):
             st.session_state.profile = None
+            st.session_state.zodiac = None
             st.session_state.messages = []
+            st.session_state.opening_generated = False
             st.rerun()
