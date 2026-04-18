@@ -7,7 +7,7 @@ from google.genai import types
 
 from numerology import build_profile
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-2.0-flash"
 
 
 def get_client() -> genai.Client:
