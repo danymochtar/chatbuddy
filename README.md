@@ -2,19 +2,16 @@
 
 Temen AI personal yang pake lensa numerologi (Life Path, Expression, Soul Urge, Personality, Birthday Number) buat ngejawab pertanyaan soal hidup, karir, percintaan, pertemanan, dll.
 
-## Dapetin Gemini API Key (gratis)
+## Setup Anthropic API
 
-1. Buka **https://aistudio.google.com/apikey**
-2. Login pake akun Google
-3. Klik **Create API key** → copy key-nya (formatnya `AIza...`)
-
-Free tier: 15 request/menit, 1500 request/hari di model Flash. Cukup banget buat personal use.
+1. Top-up credit di **https://console.anthropic.com/settings/billing** (minimum $5, pake credit/debit card). Note: API credit beda dari subscription Claude Pro/Max.
+2. Bikin API key di **https://console.anthropic.com/settings/keys** → **Create Key** → copy (formatnya `sk-ant-api03-...`).
 
 ## Jalanin lokal
 
 ```bash
 pip install -r requirements.txt
-export GEMINI_API_KEY="AIza..."
+export ANTHROPIC_API_KEY="sk-ant-api03-..."
 streamlit run app.py
 ```
 
@@ -25,14 +22,14 @@ Buka http://localhost:8501
 1. Push repo ini ke GitHub.
 2. Buka https://share.streamlit.io → **New app** → pilih repo ini.
 3. Main file path: `app.py`
-4. Di menu **Advanced settings → Secrets**, tambahin:
+4. Di **Advanced settings → Secrets**:
    ```toml
-   GEMINI_API_KEY = "AIza..."
+   ANTHROPIC_API_KEY = "sk-ant-api03-..."
    ```
-5. Klik **Deploy**. Selesai — dapet URL publik otomatis.
+5. **Deploy**.
 
 ## Stack
 
 - Streamlit (UI + chat)
-- Google Gemini API (`gemini-2.5-flash`) dengan streaming
+- Claude Haiku 4.5 via Anthropic API (streaming + prompt caching)
 - Numerologi Pythagorean (termasuk master numbers 11/22/33)

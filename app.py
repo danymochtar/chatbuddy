@@ -1,26 +1,26 @@
 import os
 from datetime import date
 
+import anthropic
 import streamlit as st
-from google import genai
-from google.genai import types
 
 from numerology import build_profile
 
-MODEL = "gemini-2.0-flash"
+MODEL = "claude-haiku-4-5"
+MAX_TOKENS = 2048
 
 
-def get_client() -> genai.Client:
-    api_key = st.secrets.get("GEMINI_API_KEY") if hasattr(st, "secrets") else None
-    api_key = api_key or os.environ.get("GEMINI_API_KEY")
+def get_client() -> anthropic.Anthropic:
+    api_key = st.secrets.get("ANTHROPIC_API_KEY") if hasattr(st, "secrets") else None
+    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        st.error("GEMINI_API_KEY belum di-set. Tambahin di Streamlit secrets atau env variable.")
+        st.error("ANTHROPIC_API_KEY belum di-set. Tambahin di Streamlit secrets atau env variable.")
         st.stop()
-    return genai.Client(api_key=api_key)
+    return anthropic.Anthropic(api_key=api_key)
 
 
-def system_prompt(profile: dict) -> str:
-    return (
+def system_prompt(profile: dict) -> list:
+    base = (
         "Lo adalah ChatBuddy — AI teman deket yang ngerti numerologi Pythagorean "
         "dan pake data numerologi user buat ngejawab pertanyaan mereka soal hidup, "
         "personality, karir, percintaan, pertemanan, keluarga, dan masalah personal lainnya.\n\n"
@@ -50,18 +50,18 @@ def system_prompt(profile: dict) -> str:
         "- Personality: gimana orang lain lihat lo di first impression\n"
         "- Birthday: talenta spesifik yang lo bawa sejak lahir\n"
     )
+    return [{"type": "text", "text": base, "cache_control": {"type": "ephemeral"}}]
 
 
-def to_gemini_contents(messages: list) -> list:
-    contents = []
+def to_anthropic_messages(messages: list) -> list:
+    result = []
     started = False
     for msg in messages:
-        role = "user" if msg["role"] == "user" else "model"
-        if not started and role != "user":
+        if not started and msg["role"] != "user":
             continue
         started = True
-        contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
-    return contents
+        result.append({"role": msg["role"], "content": msg["content"]})
+    return result
 
 
 def render_profile(profile: dict) -> None:
@@ -144,16 +144,14 @@ else:
         with st.chat_message("assistant"):
             placeholder = st.empty()
             full_text = ""
-            stream = client.models.generate_content_stream(
+            with client.messages.stream(
                 model=MODEL,
-                contents=to_gemini_contents(st.session_state.messages),
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt(profile),
-                ),
-            )
-            for chunk in stream:
-                if chunk.text:
-                    full_text += chunk.text
+                max_tokens=MAX_TOKENS,
+                system=system_prompt(profile),
+                messages=to_anthropic_messages(st.session_state.messages),
+            ) as stream:
+                for text in stream.text_stream:
+                    full_text += text
                     placeholder.markdown(full_text + "▌")
             placeholder.markdown(full_text)
 
