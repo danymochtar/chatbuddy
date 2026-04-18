@@ -26,7 +26,7 @@ from zodiac import (
 )
 
 MODEL = "claude-haiku-4-5"
-MAX_TOKENS = 3000
+MAX_TOKENS = 4000
 STORAGE_KEY = "chatbuddy_session_v1"
 
 TEXTS = {
@@ -953,19 +953,13 @@ def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") 
     if include_intimate:
         intimate_section = (
             "\n## 🔥 Intimate Chemistry\n"
-            "Analisa kecocokan intim yg **matang, tasteful, dan jujur** — bukan vulgar, bukan "
-            "kaku. Cover:\n"
-            "- Kebutuhan masing-masing di ranjang (tebak dari karakter: misal slow-sensual "
-            "vs fiery-spontan, emotional-connection vs physical-pleasure, butuh rutinitas vs "
-            "butuh variasi)\n"
-            "- Dinamika chemistry: dimana klop, dimana potensi friksi (contoh: satu butuh "
-            "emotional warm-up, satu lebih direct; satu romantic planner, satu spontan)\n"
-            "- Impact aura luar & panggilan hati ke gaya intim\n"
-            "- 2-3 tips praktis buat bikin connection lebih dalem (komunikasi, foreplay "
-            "emosional, ritual berdua, dll)\n\n"
-            "Tone: dewasa, terbuka, saling respect. Hindari stereotype gender / sexist "
-            "framing. Kalo data terbatas, ya bilang 'secara karakter ini kemungkinan...' "
-            "daripada ngasih klaim yg pasti.\n"
+            "**To the point. Format bullet pendek — MAX 5 bullet total, 1-2 kalimat per bullet.**\n"
+            "- Gaya intim lo: _(1 kalimat singkat)_\n"
+            "- Gaya intim dia: _(1 kalimat singkat)_\n"
+            "- Chemistry kalian: _(klop dimana + friksi dimana, 1-2 kalimat)_\n"
+            "- Tips #1: _(aksi konkret)_\n"
+            "- Tips #2: _(aksi konkret)_\n\n"
+            "Tone dewasa, tasteful, langsung. Hindari bertele-tele / stereotype / vulgar.\n"
         )
 
     return (
@@ -1213,41 +1207,9 @@ def build_full_profile(
 
 st.set_page_config(page_title="ChatBuddy", page_icon="🔮", layout="centered")
 
+# 1. Initialize all state defaults before anything renders
 if "language" not in st.session_state:
     st.session_state.language = "id"
-
-_lang_cols = st.columns([3, 1])
-with _lang_cols[1]:
-    _lang_choice = st.segmented_control(
-        "language",
-        options=["🇺🇸", "🇮🇩"],
-        default="🇺🇸" if st.session_state.language == "en" else "🇮🇩",
-        label_visibility="collapsed",
-        key="_lang_toggle",
-    )
-    if _lang_choice:
-        _new_lang = "en" if _lang_choice == "🇺🇸" else "id"
-        if _new_lang != st.session_state.language:
-            st.session_state.language = _new_lang
-            st.session_state.cached_pages = {}
-            st.session_state.opening_generated = False
-            st.session_state.messages = []
-            for _rel in st.session_state.get("relationships", []):
-                _rel["analysis"] = ""
-            _career = st.session_state.get("career")
-            if _career:
-                _career["analysis"] = ""
-                st.session_state.career = _career
-            if st.session_state.get("profile"):
-                try:
-                    save_session_to_storage()
-                except Exception:
-                    pass
-            st.rerun()
-
-st.title("🔮 ChatBuddy")
-st.caption(t("subtitle"))
-
 if "profile" not in st.session_state:
     st.session_state.profile = None
 if "zodiac" not in st.session_state:
@@ -1267,10 +1229,54 @@ if "mbti" not in st.session_state:
 if "career" not in st.session_state:
     st.session_state.career = None
 
+# 2. Restore from localStorage BEFORE rendering any widgets
 if "storage_loaded" not in st.session_state:
     if st.session_state.profile is None:
         load_session_from_storage()
     st.session_state.storage_loaded = True
+
+
+def _switch_language(new_lang: str) -> None:
+    if new_lang == st.session_state.language:
+        return
+    st.session_state.language = new_lang
+    st.session_state.cached_pages = {}
+    st.session_state.opening_generated = False
+    st.session_state.messages = []
+    for _rel in st.session_state.get("relationships", []):
+        _rel["analysis"] = ""
+    _career = st.session_state.get("career")
+    if _career:
+        _career["analysis"] = ""
+        st.session_state.career = _career
+    if st.session_state.get("profile"):
+        try:
+            save_session_to_storage()
+        except Exception:
+            pass
+    st.rerun()
+
+
+# 3. Language toggle (now after storage load, so language reflects saved value)
+_lang_cols = st.columns([3, 1, 1])
+_current_lang = st.session_state.language
+if _lang_cols[1].button(
+    "🇺🇸",
+    key="_lang_en",
+    use_container_width=True,
+    type="primary" if _current_lang == "en" else "secondary",
+):
+    _switch_language("en")
+if _lang_cols[2].button(
+    "🇮🇩",
+    key="_lang_id",
+    use_container_width=True,
+    type="primary" if _current_lang == "id" else "secondary",
+):
+    _switch_language("id")
+
+st.title("🔮 ChatBuddy")
+st.caption(t("subtitle"))
 
 if st.session_state.profile is None:
     st.subheader(t("kenalan"))
