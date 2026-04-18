@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import date, datetime, time
 
@@ -9,6 +10,64 @@ from zodiac import JAKARTA_COORDS, SIGN_TRAITS, compute_chart, geocode_city, sun
 
 MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 3000
+STORAGE_KEY = "chatbuddy_session_v1"
+
+
+def _get_local_storage():
+    try:
+        from streamlit_local_storage import LocalStorage
+        return LocalStorage()
+    except Exception:
+        return None
+
+
+def save_session_to_storage() -> None:
+    ls = _get_local_storage()
+    if ls is None or st.session_state.profile is None:
+        return
+    try:
+        data = {
+            "profile": st.session_state.profile,
+            "zodiac": st.session_state.zodiac,
+            "messages": st.session_state.messages,
+            "opening_generated": st.session_state.opening_generated,
+        }
+        ls.setItem(STORAGE_KEY, json.dumps(data))
+    except Exception:
+        pass
+
+
+def load_session_from_storage() -> bool:
+    ls = _get_local_storage()
+    if ls is None:
+        return False
+    try:
+        raw = ls.getItem(STORAGE_KEY)
+        if not raw:
+            return False
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(data, dict) or not data.get("profile"):
+            return False
+        st.session_state.profile = data["profile"]
+        st.session_state.zodiac = data.get("zodiac")
+        st.session_state.messages = data.get("messages", [])
+        st.session_state.opening_generated = data.get("opening_generated", False)
+        return True
+    except Exception:
+        return False
+
+
+def clear_session_storage() -> None:
+    ls = _get_local_storage()
+    if ls is None:
+        return
+    try:
+        ls.deleteItem(STORAGE_KEY)
+    except Exception:
+        try:
+            ls.setItem(STORAGE_KEY, "")
+        except Exception:
+            pass
 
 
 def get_client() -> anthropic.Anthropic:
@@ -221,6 +280,11 @@ if "messages" not in st.session_state:
 if "opening_generated" not in st.session_state:
     st.session_state.opening_generated = False
 
+if "storage_loaded" not in st.session_state:
+    if st.session_state.profile is None:
+        load_session_from_storage()
+    st.session_state.storage_loaded = True
+
 if st.session_state.profile is None:
     st.subheader("Kenalan dulu yuk")
     with st.form("profile_form"):
@@ -264,6 +328,7 @@ if st.session_state.profile is None:
             st.session_state.zodiac = zodiac
             st.session_state.messages = []
             st.session_state.opening_generated = False
+            save_session_to_storage()
             st.rerun()
 else:
     profile = st.session_state.profile
@@ -284,6 +349,7 @@ else:
             )
         st.session_state.messages.append({"role": "assistant", "content": full_text})
         st.session_state.opening_generated = True
+        save_session_to_storage()
         st.rerun()
 
     user_input = st.chat_input("Tulis pertanyaan atau cerita lo...")
@@ -299,6 +365,7 @@ else:
                 placeholder=placeholder,
             )
         st.session_state.messages.append({"role": "assistant", "content": full_text})
+        save_session_to_storage()
 
     with st.sidebar:
         st.header("Sesi")
@@ -308,7 +375,9 @@ else:
             st.write(f"Jam: {zodiac['birth_time']}")
         if zodiac and zodiac.get("birth_city"):
             st.write(f"Kota: {zodiac['birth_city']}")
+        st.caption("💾 Sesi lo auto-tersimpen di browser — bisa tutup tab, balik lagi kapan aja.")
         if st.button("Reset sesi", use_container_width=True):
+            clear_session_storage()
             st.session_state.profile = None
             st.session_state.zodiac = None
             st.session_state.messages = []
