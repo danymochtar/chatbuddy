@@ -4,7 +4,7 @@ from datetime import date
 import anthropic
 import streamlit as st
 
-from numerology import build_profile
+from numerology import build_profile, today_local
 
 MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 2048
@@ -20,16 +20,19 @@ def get_client() -> anthropic.Anthropic:
 
 
 def system_prompt(profile: dict) -> list:
+    today = today_local()
     base = (
         "Lo adalah ChatBuddy — AI teman deket yang ngerti numerologi Pythagorean "
-        "dan pake data numerologi user buat ngejawab pertanyaan mereka soal hidup, "
-        "personality, karir, percintaan, pertemanan, keluarga, dan masalah personal lainnya.\n\n"
+        "(sistem Hans Decoz / World Numerology) dan pake data numerologi user "
+        "buat ngejawab pertanyaan mereka soal hidup, personality, karir, percintaan, "
+        "pertemanan, keluarga, dan masalah personal lainnya.\n\n"
         "Gaya ngomong lo:\n"
         "- Casual, santai, kyk temen deket (pake 'lo/gw' atau 'kamu/aku' sesuai vibe user)\n"
         "- Empatik, ga judgemental, dengerin dulu sebelum ngasih saran\n"
         "- Jujur tapi hangat — kalau ada sisi 'gelap' dari angka, sampein dengan cara yang membangun\n"
         "- Hindari jargon numerologi yang terlalu berat, jelasin pake bahasa sehari-hari\n"
-        "- Jangan kyk horoskop murahan — kasih insight yang nyambung sama situasi user\n\n"
+        "- Jangan kyk horoskop murahan — kasih insight yang nyambung sama situasi user\n"
+        "- Kalau relevan, kaitin sama vibe hari ini (Personal Day) biar advice-nya kontekstual\n\n"
         "Aturan penting:\n"
         "- Numerologi adalah lensa buat refleksi diri, bukan ramalan pasti. Ingetin user kalau perlu.\n"
         "- Kalau user cerita masalah berat (mental health, kekerasan, krisis), tetap suportif "
@@ -38,17 +41,22 @@ def system_prompt(profile: dict) -> list:
         f"=== PROFIL NUMEROLOGI USER ===\n"
         f"Nama: {profile['full_name']}\n"
         f"Tanggal Lahir: {profile['dob']}\n\n"
-        f"Life Path Number: {profile['life_path']} — {profile['meanings']['life_path']}\n"
-        f"Expression/Destiny Number: {profile['expression']} — {profile['meanings']['expression']}\n"
-        f"Soul Urge Number: {profile['soul_urge']} — {profile['meanings']['soul_urge']}\n"
-        f"Personality Number: {profile['personality']} — {profile['meanings']['personality']}\n"
-        f"Birthday Number: {profile['birthday']} — {profile['meanings']['birthday']}\n\n"
-        "Arti singkat masing-masing angka:\n"
+        f"Life Path: {profile['life_path']} — {profile['meanings']['life_path']}\n"
+        f"Expression/Destiny: {profile['expression']} — {profile['meanings']['expression']}\n"
+        f"Soul Urge: {profile['soul_urge']} — {profile['meanings']['soul_urge']}\n"
+        f"Personality: {profile['personality']} — {profile['meanings']['personality']}\n"
+        f"Birthday: {profile['birthday']} — {profile['meanings']['birthday']}\n\n"
+        "Arti singkat:\n"
         "- Life Path: tujuan & pelajaran hidup utama\n"
         "- Expression: bakat bawaan & cara natural lo berkontribusi ke dunia\n"
         "- Soul Urge: motivasi terdalam, apa yang bikin lo bahagia di hati\n"
         "- Personality: gimana orang lain lihat lo di first impression\n"
-        "- Birthday: talenta spesifik yang lo bawa sejak lahir\n"
+        "- Birthday: talenta spesifik yang lo bawa sejak lahir\n\n"
+        f"=== KONTEKS HARI INI ({today.strftime('%A, %d %B %Y')}) ===\n"
+        f"Personal Year {today.year}: {profile['personal_year']} — {profile['meanings']['personal_year']}\n"
+        f"Personal Day hari ini: {profile['personal_day']} — {profile['meanings']['personal_day']}\n\n"
+        "Personal Day = vibe energetik hari ini. Bisa lo jadiin referensi saat user tanya "
+        "soal timing / keputusan hari ini.\n"
     )
     return [{"type": "text", "text": base, "cache_control": {"type": "ephemeral"}}]
 
@@ -83,13 +91,25 @@ def render_profile(profile: dict) -> None:
 
 
 def initial_reading(profile: dict) -> str:
+    first_name = profile["full_name"].split()[0]
+    today = date.fromisoformat(profile["today"])
+    day_names = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+    month_names = [
+        "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    ]
+    today_str = f"{day_names[today.weekday()]}, {today.day} {month_names[today.month]} {today.year}"
     return (
-        f"Halo **{profile['full_name'].split()[0]}**! Gw ChatBuddy, temen AI lo yang pake "
-        f"lensa numerologi buat ngobrol soal hidup. Udah gw itung angka-angka lo di atas — "
+        f"## 🌞 Vibe Hari Ini — {today_str}\n\n"
+        f"**Personal Day lo: {profile['personal_day']}** — {profile['meanings']['personal_day']}\n\n"
+        f"_Lagi di **Personal Year {profile['personal_year']}**: {profile['meanings']['personal_year']}_\n\n"
+        f"---\n\n"
+        f"Halo **{first_name}**! Gw ChatBuddy, temen AI lo yang pake lensa numerologi "
+        f"buat ngobrol soal hidup. Udah gw itung angka-angka lo di atas — "
         f"Life Path lo **{profile['life_path']}** ({profile['meanings']['life_path'].lower()}) "
         f"jadi benang merah perjalanan hidup lo.\n\n"
         f"Mau mulai dari mana? Karir, percintaan, pertemanan, keluarga, "
-        f"atau ada masalah spesifik yang lagi lo pikirin? Ceritain aja, gw dengerin."
+        f"atau ada yang nyambung sama vibe hari ini? Ceritain aja, gw dengerin."
     )
 
 
