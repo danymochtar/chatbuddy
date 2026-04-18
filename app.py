@@ -18,6 +18,116 @@ MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 3000
 STORAGE_KEY = "chatbuddy_session_v1"
 
+TEXTS = {
+    "subtitle": {
+        "id": "Temen AI lo buat refleksi diri",
+        "en": "Your AI friend for self-reflection",
+    },
+    "kenalan": {"id": "Kenalan dulu yuk", "en": "Let's get to know you"},
+    "name_label": {
+        "id": "Nama lengkap (sesuai akta lahir)",
+        "en": "Full name (as on birth certificate)",
+    },
+    "name_help": {
+        "id": "Angka-angkanya dihitung dari nama ini",
+        "en": "Your numbers are calculated from this name",
+    },
+    "nick_label": {
+        "id": "Panggilan / nickname (opsional)",
+        "en": "Nickname (optional)",
+    },
+    "nick_placeholder": {
+        "id": "Biarin kosong buat pake nama depan",
+        "en": "Leave blank to use first name",
+    },
+    "nick_help": {
+        "id": "Ini yg ChatBuddy pakai buat sapa lo",
+        "en": "ChatBuddy will call you by this",
+    },
+    "dob_label": {"id": "Tanggal lahir", "en": "Date of birth"},
+    "time_label": {
+        "id": "Jam lahir (HH:MM, opsional)",
+        "en": "Birth time (HH:MM, optional)",
+    },
+    "city_label": {
+        "id": "Kota lahir (opsional)",
+        "en": "Birth city (optional)",
+    },
+    "submit": {"id": "Mulai ngobrol →", "en": "Start chatting →"},
+    "err_name": {
+        "id": "Nama lengkapnya dong biar bisa dihitung 🙏",
+        "en": "Please enter your full name 🙏",
+    },
+    "err_time": {
+        "id": "Format jam lahir salah. Pake `HH:MM` ya (contoh `13:30`) atau kosongin.",
+        "en": "Invalid time format. Use `HH:MM` (e.g. `13:30`) or leave empty.",
+    },
+    "chat_placeholder": {
+        "id": "Tulis pertanyaan atau cerita lo...",
+        "en": "Ask a question or share something...",
+    },
+    "nav_chat": {"id": "Chat", "en": "Chat"},
+    "nav_karakter": {"id": "Karakter", "en": "Character"},
+    "nav_inner": {"id": "Aspek Dalam", "en": "Inner Aspect"},
+    "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
+    "nav_arah": {"id": "Arah Bulan & Tahun", "en": "Month & Year Guide"},
+    "nav_relationship": {"id": "Relationship", "en": "Relationship"},
+    "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
+    "reset": {"id": "Reset sesi", "en": "Reset session"},
+    "storage_note": {
+        "id": "💾 Sesi tersimpen di browser lo.",
+        "en": "💾 Session is saved in your browser.",
+    },
+    "misi_hidup": {"id": "Misi Hidup", "en": "Life Mission"},
+    "bakat_bawaan": {"id": "Bakat Bawaan", "en": "Natural Talent"},
+    "panggilan_hati": {"id": "Panggilan Hati", "en": "Heart's Calling"},
+    "aura_luar": {"id": "Aura Luar", "en": "Outer Aura"},
+    "talenta_lahir": {"id": "Talenta Lahir", "en": "Birthday Gift"},
+    "refresh": {"id": "🔄 Refresh", "en": "🔄 Refresh"},
+    "rel_header": {"id": "💑 Relationship", "en": "💑 Relationship"},
+    "rel_caption": {
+        "id": "Liat dinamika karakter lo sama orang deket — pasangan, sahabat, keluarga. Tambahin nama & tanggal lahir mereka, nanti gw analisis chemistry-nya.",
+        "en": "See your dynamic with someone close — partner, best friend, family. Add their name & birthday, and I'll analyze the chemistry.",
+    },
+    "rel_add": {"id": "➕ Tambah orang baru", "en": "➕ Add new person"},
+    "rel_name": {
+        "id": "Nama lengkap mereka",
+        "en": "Their full name",
+    },
+    "rel_nick": {
+        "id": "Panggilan (opsional)",
+        "en": "Nickname (optional)",
+    },
+    "rel_dob": {
+        "id": "Tanggal lahir mereka",
+        "en": "Their date of birth",
+    },
+    "rel_relation": {"id": "Hubungan kalian", "en": "Your relationship"},
+    "rel_relation_opts": {
+        "id": ["pasangan", "sahabat", "keluarga", "temen kerja", "gebetan", "lainnya"],
+        "en": ["partner", "best friend", "family", "coworker", "crush", "other"],
+    },
+    "rel_submit": {"id": "Analisa →", "en": "Analyze →"},
+    "rel_err_name": {
+        "id": "Nama-nya harus diisi 🙏",
+        "en": "Name is required 🙏",
+    },
+    "rel_loading": {
+        "id": "Gw baca dulu dinamikanya...",
+        "en": "Reading your dynamic...",
+    },
+    "rel_empty": {
+        "id": "Belum ada orang yang dianalisa. Tambahin di atas ☝️",
+        "en": "No one added yet. Add above ☝️",
+    },
+}
+
+
+def t(key: str) -> str:
+    lang = st.session_state.get("language", "id")
+    entry = TEXTS.get(key, {})
+    return entry.get(lang, entry.get("id", key))
+
 
 def _get_local_storage():
     try:
@@ -39,6 +149,7 @@ def save_session_to_storage() -> None:
             "opening_generated": st.session_state.opening_generated,
             "cached_pages": st.session_state.get("cached_pages", {}),
             "relationships": st.session_state.get("relationships", []),
+            "language": st.session_state.get("language", "id"),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data))
     except Exception:
@@ -62,6 +173,7 @@ def load_session_from_storage() -> bool:
         st.session_state.opening_generated = data.get("opening_generated", False)
         st.session_state.cached_pages = data.get("cached_pages", {})
         st.session_state.relationships = data.get("relationships", [])
+        st.session_state.language = data.get("language", "id")
         return True
     except Exception:
         return False
@@ -98,9 +210,27 @@ def format_today_id(today: date) -> str:
     return f"{days[today.weekday()]}, {today.day} {months[today.month]} {today.year}"
 
 
+def language_directive() -> str:
+    lang = st.session_state.get("language", "id")
+    if lang == "en":
+        return (
+            "**LANGUAGE: You MUST respond in casual English.** Use 'you/I', warm friend-like "
+            "tone. Do not mix Indonesian words. When I give you Indonesian context terms "
+            "like 'misi hidup', 'panggilan hati', 'aura luar', 'bakat bawaan', 'talenta "
+            "lahir', translate them to English equivalents ('life mission', 'heart's "
+            "calling', 'outer aura', 'natural talent', 'birthday gift'). Headings in "
+            "English too.\n\n"
+        )
+    return (
+        "**BAHASA: Lo WAJIB ngomong pake bahasa Indonesia casual** ('lo/gw' atau 'kamu/aku' "
+        "nyesuain vibe user). Jangan campur English kecuali istilah umum.\n\n"
+    )
+
+
 def base_persona() -> str:
     return (
-        "Lo adalah **ChatBuddy** — teman curhat AI yang *diam-diam* pake numerologi Pythagorean "
+        language_directive()
+        + "Lo adalah **ChatBuddy** — teman curhat AI yang *diam-diam* pake numerologi Pythagorean "
         "(sistem Hans Decoz / World Numerology) dan astrologi Barat sebagai lensa baca "
         "karakter + vibe user.\n\n"
         "**Tone:**\n"
@@ -404,7 +534,7 @@ def render_cached_text_page(
     if text:
         st.markdown(text)
         col1, col2 = st.columns([1, 4])
-        if col1.button("🔄 Refresh", key=f"refresh_{page_key}"):
+        if col1.button(t("refresh"), key=f"refresh_{page_key}"):
             cached.pop(page_key, None)
             st.session_state.cached_pages = cached
             save_session_to_storage()
@@ -422,38 +552,38 @@ def render_cached_text_page(
 
 
 def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
-    st.header("💑 Relationship")
-    st.caption(
-        "Liat dinamika karakter lo sama orang deket — pasangan, sahabat, keluarga. "
-        "Tambahin nama & tanggal lahir mereka, nanti gw analisis chemistry-nya."
-    )
+    st.header(t("rel_header"))
+    st.caption(t("rel_caption"))
 
-    with st.expander("➕ Tambah orang baru"):
+    with st.expander(t("rel_add")):
         with st.form("partner_form", clear_on_submit=True):
-            p_name = st.text_input("Nama lengkap mereka")
-            p_nick = st.text_input("Panggilan (opsional)", placeholder="Default: nama depan")
+            p_name = st.text_input(t("rel_name"))
+            p_nick = st.text_input(
+                t("rel_nick"),
+                placeholder="Default: nama depan" if st.session_state.language == "id" else "Default: first name",
+            )
             p_dob = st.date_input(
-                "Tanggal lahir mereka",
+                t("rel_dob"),
                 min_value=date(1900, 1, 1),
                 max_value=date.today(),
                 value=date(2000, 1, 1),
                 format="DD/MM/YYYY",
             )
             p_relation = st.selectbox(
-                "Hubungan kalian",
-                ["pasangan", "sahabat", "keluarga", "temen kerja", "gebetan", "lainnya"],
+                t("rel_relation"),
+                TEXTS["rel_relation_opts"][st.session_state.language],
             )
-            add = st.form_submit_button("Analisa →", use_container_width=True)
+            add = st.form_submit_button(t("rel_submit"), use_container_width=True)
 
         if add:
             if not p_name.strip() or len(p_name.strip()) < 2:
-                st.error("Nama-nya harus diisi 🙏")
+                st.error(t("rel_err_name"))
             else:
                 partner = build_partner_profile(
                     p_name.strip(), p_dob,
                     nickname=p_nick.strip() or None,
                 )
-                with st.spinner("Gw baca dulu dinamikanya..."):
+                with st.spinner(t("rel_loading")):
                     placeholder = st.empty()
                     analysis = stream_assistant(
                         messages_for_api=[{"role": "user", "content": relationship_prompt(partner)}],
@@ -477,7 +607,7 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
 
     rels = st.session_state.get("relationships", [])
     if not rels:
-        st.info("Belum ada orang yang dianalisa. Tambahin di atas ☝️")
+        st.info(t("rel_empty"))
         return
 
     for i, rel in enumerate(rels):
@@ -524,8 +654,33 @@ def build_full_profile(
 
 
 st.set_page_config(page_title="ChatBuddy", page_icon="🔮", layout="centered")
+
+if "language" not in st.session_state:
+    st.session_state.language = "id"
+
+_lang_cols = st.columns([3, 1])
+with _lang_cols[1]:
+    _lang_choice = st.segmented_control(
+        "language",
+        options=["🇮🇩 ID", "🇺🇸 EN"],
+        default="🇮🇩 ID" if st.session_state.language == "id" else "🇺🇸 EN",
+        label_visibility="collapsed",
+        key="_lang_toggle",
+    )
+    if _lang_choice:
+        _new_lang = "id" if "ID" in _lang_choice else "en"
+        if _new_lang != st.session_state.language:
+            st.session_state.language = _new_lang
+            st.session_state.cached_pages = {}
+            if st.session_state.get("profile"):
+                try:
+                    save_session_to_storage()
+                except Exception:
+                    pass
+            st.rerun()
+
 st.title("🔮 ChatBuddy")
-st.caption("Temen AI lo buat refleksi diri")
+st.caption(t("subtitle"))
 
 if "profile" not in st.session_state:
     st.session_state.profile = None
@@ -548,20 +703,20 @@ if "storage_loaded" not in st.session_state:
     st.session_state.storage_loaded = True
 
 if st.session_state.profile is None:
-    st.subheader("Kenalan dulu yuk")
+    st.subheader(t("kenalan"))
     with st.form("profile_form"):
         full_name = st.text_input(
-            "Nama lengkap (sesuai akta lahir)",
-            placeholder="Contoh: Budi Santoso",
-            help="Angka-angkanya dihitung dari nama ini",
+            t("name_label"),
+            placeholder="Contoh: Budi Santoso" if st.session_state.language == "id" else "Example: Jane Doe",
+            help=t("name_help"),
         )
         nickname = st.text_input(
-            "Panggilan / nickname (opsional)",
-            placeholder="Biarin kosong buat pake nama depan",
-            help="Ini yg ChatBuddy pakai buat sapa lo",
+            t("nick_label"),
+            placeholder=t("nick_placeholder"),
+            help=t("nick_help"),
         )
         dob = st.date_input(
-            "Tanggal lahir",
+            t("dob_label"),
             min_value=date(1900, 1, 1),
             max_value=date.today(),
             value=date(2000, 1, 1),
@@ -569,14 +724,14 @@ if st.session_state.profile is None:
         )
         col_time, col_city = st.columns(2)
         with col_time:
-            birth_time_str = st.text_input("Jam lahir (HH:MM, opsional)", placeholder="contoh 13:30")
+            birth_time_str = st.text_input(t("time_label"), placeholder="13:30")
         with col_city:
-            birth_city = st.text_input("Kota lahir (opsional)", placeholder="contoh Jakarta")
-        submitted = st.form_submit_button("Mulai ngobrol →", use_container_width=True)
+            birth_city = st.text_input(t("city_label"), placeholder="Jakarta")
+        submitted = st.form_submit_button(t("submit"), use_container_width=True)
 
     if submitted:
         if not full_name.strip() or len(full_name.strip()) < 2:
-            st.error("Nama lengkapnya dong biar bisa dihitung 🙏")
+            st.error(t("err_name"))
         else:
             birth_time_obj = None
             if birth_time_str.strip():
@@ -587,7 +742,7 @@ if st.session_state.profile is None:
                     except ValueError:
                         continue
                 if birth_time_obj is None:
-                    st.error("Format jam lahir salah. Pake `HH:MM` ya (contoh `13:30`) atau kosongin.")
+                    st.error(t("err_time"))
                     st.stop()
             profile, zodiac = build_full_profile(
                 full_name.strip(),
@@ -614,12 +769,12 @@ else:
         st.divider()
 
         nav_items = [
-            ("💬", "Chat", "chat"),
-            ("👤", "Karakter", "karakter"),
-            ("🔍", "Aspek Dalam", "inner"),
-            ("🎓", "PR Hidup", "karmic"),
-            ("🗓️", "Arah Bulan & Tahun", "arah"),
-            ("💑", "Relationship", "relationship"),
+            ("💬", t("nav_chat"), "chat"),
+            ("👤", t("nav_karakter"), "karakter"),
+            ("🔍", t("nav_inner"), "inner"),
+            ("🎓", t("nav_karmic"), "karmic"),
+            ("🗓️", t("nav_arah"), "arah"),
+            ("💑", t("nav_relationship"), "relationship"),
         ]
         for emoji, label, key in nav_items:
             is_active = st.session_state.current_page == key
@@ -635,19 +790,19 @@ else:
 
         st.divider()
 
-        with st.expander("📊 Angka utama"):
-            for label, key in [
-                ("Misi Hidup", "life_path"),
-                ("Bakat Bawaan", "expression"),
-                ("Panggilan Hati", "soul_urge"),
-                ("Aura Luar", "personality"),
-                ("Talenta Lahir", "birthday"),
+        with st.expander(t("angka_utama")):
+            for label_key, key in [
+                ("misi_hidup", "life_path"),
+                ("bakat_bawaan", "expression"),
+                ("panggilan_hati", "soul_urge"),
+                ("aura_luar", "personality"),
+                ("talenta_lahir", "birthday"),
             ]:
                 num = profile[key]
-                st.markdown(f"**{label}:** `{num}` · _{ARCHETYPES[num]}_")
+                st.markdown(f"**{t(label_key)}:** `{num}` · _{ARCHETYPES[num]}_")
 
-        st.caption("💾 Sesi tersimpen di browser lo.")
-        if st.button("Reset sesi", use_container_width=True):
+        st.caption(t("storage_note"))
+        if st.button(t("reset"), use_container_width=True):
             clear_session_storage()
             for key in [
                 "profile", "zodiac", "messages", "opening_generated",
@@ -677,7 +832,7 @@ else:
             save_session_to_storage()
             st.rerun()
 
-        user_input = st.chat_input("Tulis pertanyaan atau cerita lo...")
+        user_input = st.chat_input(t("chat_placeholder"))
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
             with st.chat_message("user"):
