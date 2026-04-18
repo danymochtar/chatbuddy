@@ -370,18 +370,45 @@ def language_directive() -> str:
     lang = st.session_state.get("language", "id")
     if lang == "en":
         return (
-            "**LANGUAGE (CRITICAL): Respond in casual English ONLY.** Use 'you/I', warm "
-            "friend-like tone. Do NOT respond in Indonesian. Even if the user message or "
-            "instructions below contain Indonesian phrasing, your ENTIRE response — all "
-            "headings, all body text, all tips — must be in English. Translate Indonesian "
-            "context terms (misi hidup → life mission, panggilan hati → heart's calling, "
-            "aura luar → outer aura, bakat bawaan → natural talent, talenta lahir → "
-            "birthday gift, PR hidup → life challenges, obsesi tersembunyi → hidden drive, "
-            "versi dewasa → mature version, vibe hari ini → today's vibe, etc.) to English.\n\n"
+            "**LANGUAGE (CRITICAL): Respond in casual English ONLY — EVERYTHING in English.** "
+            "Use 'you/I', warm friend-like tone.\n"
+            "- Do NOT respond in Indonesian. If the instruction below is in Indonesian, "
+            "translate conceptually and answer in English.\n"
+            "- **ALL section headings must be in English.** If an instruction specifies a "
+            "heading like `## 🌞 Vibe Hari Ini`, render it as `## 🌞 Today's Vibe`. "
+            "Other examples:\n"
+            "  - `## 👋 Halo [Nama]` → `## 👋 Hi [Name]`\n"
+            "  - `## 📖 Cerita Singkat Tentang Lo` → `## 📖 A Quick Story About You`\n"
+            "  - `## 💬 Yuk Ngobrol` → `## 💬 Let's Chat`\n"
+            "  - `## 👤 Kompleksitas Karakter Lo` → `## 👤 Your Character Depth`\n"
+            "  - `## 🔍 Aspek Dalam Lo` → `## 🔍 Your Inner Aspects`\n"
+            "  - `## 🎓 PR Hidup Lo` → `## 🎓 Your Life Lessons`\n"
+            "  - `## 🎯 Fase Hidup Lo` → `## 🎯 Your Life Phases`\n"
+            "  - `## 🗓️ Bulan Ini` → `## 🗓️ This Month`\n"
+            "  - `## 🌱 Tahun Ini` → `## 🌱 This Year`\n"
+            "  - `## 💫 Chemistry Karakter` → `## 💫 Character Chemistry`\n"
+            "  - `## 💬 Cara Komunikasi` → `## 💬 Communication`\n"
+            "  - `## 🌱 Growth Together` (keep as-is — already English)\n"
+            "  - `## 🔥 Intimate Chemistry` (keep as-is)\n"
+            "  - `## 🌞 Vibe Buat Hari Ini` → `## 🌞 For Today`\n"
+            "  - `## 🗓️ Vibe Bulan & Tahun Ini` → `## 🗓️ This Month & Year Feel`\n"
+            "  - `## 💼 Kecocokan Sama Karakter Lo` → `## 💼 Fit With Your Character`\n"
+            "  - `## ⭐ Kekuatan Natural Lo di Role Ini` → `## ⭐ Your Natural Strengths Here`\n"
+            "  - `## ⚠️ Potensi Isu / Friksi` → `## ⚠️ Potential Friction`\n"
+            "  - `## 🛠️ Tips & Solusi` → `## 🛠️ Tips & Solutions`\n"
+            "  - `## 🌱 Vibe Tahun Ini Buat Karir` → `## 🌱 This Year's Career Vibe`\n"
+            "  - `## 🔀 Alternatif Karir` → `## 🔀 Career Alternatives`\n"
+            "  - `## 🚀 Next Level` (keep as-is)\n"
+            "- Translate Indonesian context terms to English (misi hidup → life mission, "
+            "panggilan hati → heart's calling, aura luar → outer aura, bakat bawaan → "
+            "natural talent, talenta lahir → birthday gift, PR hidup → life challenges, "
+            "obsesi tersembunyi → hidden drive, versi dewasa → mature version, vibe hari "
+            "ini → today's vibe, arah → direction, etc.).\n\n"
         )
     return (
         "**BAHASA: Lo WAJIB ngomong pake bahasa Indonesia casual** ('lo/gw' atau 'kamu/aku' "
-        "nyesuain vibe user). Jangan campur English kecuali istilah umum.\n\n"
+        "nyesuain vibe user). Headings juga pake bahasa Indonesia (jangan bilang 'Today's "
+        "Vibe', pake 'Vibe Hari Ini'). Jangan campur English kecuali istilah umum.\n\n"
     )
 
 
@@ -1322,28 +1349,28 @@ def _switch_language(new_lang: str) -> None:
     st.rerun()
 
 
-# 3. Language toggle (now after storage load, so language reflects saved value)
-_lang_cols = st.columns([10, 1, 1], vertical_alignment="center")
-_current_lang = st.session_state.language
-if _lang_cols[1].button(
-    "🇺🇸",
-    key="_lang_en",
-    type="primary" if _current_lang == "en" else "secondary",
-    help="English",
-):
-    _switch_language("en")
-if _lang_cols[2].button(
-    "🇮🇩",
-    key="_lang_id",
-    type="primary" if _current_lang == "id" else "secondary",
-    help="Bahasa Indonesia",
-):
-    _switch_language("id")
+# 3. (Removed from main area; language toggle now lives in the sidebar.)
 
-st.title("🔮 ChatBuddy")
+st.markdown("### 🔮 ChatBuddy")
 st.caption(t("subtitle"))
 
 if st.session_state.profile is None:
+    with st.sidebar:
+        _pre_lang_cols = st.columns([1, 2])
+        _pre_lang_cols[0].caption("🌐")
+        with _pre_lang_cols[1]:
+            _pre_choice = st.segmented_control(
+                "lang_pre",
+                options=["ID", "EN"],
+                default="ID" if st.session_state.language == "id" else "EN",
+                label_visibility="collapsed",
+                key="_lang_pre_toggle",
+            )
+            if _pre_choice:
+                _pre_new_lang = "id" if _pre_choice == "ID" else "en"
+                if _pre_new_lang != st.session_state.language:
+                    _switch_language(_pre_new_lang)
+
     st.subheader(t("kenalan"))
     with st.form("profile_form"):
         full_name = st.text_input(
@@ -1403,6 +1430,21 @@ else:
     zodiac = st.session_state.zodiac
 
     with st.sidebar:
+        _sb_lang_cols = st.columns([1, 2])
+        _sb_lang_cols[0].caption("🌐")
+        with _sb_lang_cols[1]:
+            _sb_choice = st.segmented_control(
+                "lang_sidebar",
+                options=["ID", "EN"],
+                default="ID" if st.session_state.language == "id" else "EN",
+                label_visibility="collapsed",
+                key="_lang_sidebar_toggle",
+            )
+            if _sb_choice:
+                _sb_new_lang = "id" if _sb_choice == "ID" else "en"
+                if _sb_new_lang != st.session_state.language:
+                    _switch_language(_sb_new_lang)
+
         nick_display = profile.get("nickname") or profile["full_name"].split()[0]
         st.markdown(f"### 👋 Hi, **{nick_display}**")
         st.caption(f"_{profile['full_name']} · {t('born_word')} {profile['dob']}_")
