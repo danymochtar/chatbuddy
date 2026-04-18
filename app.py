@@ -125,17 +125,17 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
         f"Nama: {profile['full_name']}",
         f"Tanggal lahir: {profile['dob']}",
         "",
-        "-- Baca karakter (JANGAN sebut istilah teknisnya) --",
-        f"Misi hidup / tema besar: {profile['meanings']['life_path']}",
-        f"Bakat bawaan / karakter natural: {profile['meanings']['expression']}",
-        f"Panggilan hati / apa yg dia butuh buat bahagia: {profile['meanings']['soul_urge']}",
-        f"Aura luar / first impression: {profile['meanings']['personality']}",
-        f"Talenta spesifik dari hari lahir: {profile['meanings']['birthday']}",
+        "-- Baca karakter (pake archetype label & angka dalam kurung seperlunya) --",
+        f"Misi hidup → angka {profile['life_path']} ({ARCHETYPES[profile['life_path']]}): {profile['meanings']['life_path']}",
+        f"Bakat bawaan → angka {profile['expression']} ({ARCHETYPES[profile['expression']]}): {profile['meanings']['expression']}",
+        f"Panggilan hati → angka {profile['soul_urge']} ({ARCHETYPES[profile['soul_urge']]}): {profile['meanings']['soul_urge']}",
+        f"Aura luar → angka {profile['personality']} ({ARCHETYPES[profile['personality']]}): {profile['meanings']['personality']}",
+        f"Talenta lahir → angka {profile['birthday']} ({ARCHETYPES[profile['birthday']]}): {profile['meanings']['birthday']}",
     ]
     if zodiac and zodiac.get("sun"):
         lines += [
             "",
-            "-- Lapisan tambahan (WAJIB DISEMBUNYIKAN — blend ke observasi) --",
+            "-- Lapisan tambahan (WAJIB DISEMBUNYIKAN — blend ke observasi, JANGAN sebut rasi / istilah) --",
             f"Cara dia tampil/bertindak (ego eksternal): {SIGN_TRAITS[zodiac['sun']]}",
         ]
         if zodiac.get("moon"):
@@ -164,30 +164,45 @@ def system_prompt(profile: dict, zodiac: dict | None, today: date) -> list:
 def opening_prompt() -> str:
     return (
         "Bikinin opening hangat dan personal buat gw — tone kyk temen deket yg udah kenal "
-        "gw lama, bukan reading numerologi/astrologi. **JANGAN sebut istilah teknis**. "
-        "Pake heading Markdown ## supaya jelas sectionsnya:\n\n"
+        "gw lama, bukan reading numerologi/astrologi. **JANGAN sebut istilah teknis** "
+        "(Life Path, Sun, Moon, zodiac, rasi bintang, dst). Pake heading Markdown ## supaya "
+        "jelas sectionsnya:\n\n"
+        "## 👋 Halo [Nama Depan]\n"
+        "Mulai dengan **1-2 kalimat synthesis** yang blend karakter gw jadi SATU KESELURUHAN — "
+        "bukan list sifat satu-satu, tapi rangkaian yang mengalir, nunjukin dinamika antara "
+        "misi hidup + bakat bawaan + panggilan hati + aura luar + talenta lahir. Pake kata "
+        "sambung yang ngasih dinamika: 'yang', 'dan', 'tapi', 'walau', 'makanya', 'di "
+        "dalemnya', 'di luar', dst. **WAJIB sertakan angka dalam kurung** setelah trait-nya — "
+        "ini selain bikin referensinya clear, juga bikin user tau angka-angka penting mereka.\n\n"
+        "Contoh tone (**JANGAN copy persis, selalu tailored ke user**):\n"
+        "- _\"Hi Dany, lu itu born to be leader (1) yang natural-nya mengalir bebas (5), "
+        "tapi di dalem jiwa lo itu penyayang banget (6) — dengan aura ambisius yang kerasa (8) "
+        "plus talenta buat bikin dampak besar (8).\"_\n"
+        "- _\"Hi Budi, kalo gw baca lo itu orang yang lahir buat ngayomi keluarga (6), "
+        "dengan bakat ekspresi & kreativitas yang menular (3), tapi ambisi buat jadi powerful "
+        "sebenernya kerasa juga (8) — aura luar yg stable (4) nutupin kompleksitas itu.\"_\n\n"
+        "Kalo ada angka master (11/22/33), kasih emphasis (master vibe). "
+        "Kalo 2 angka sama (kyk personality & birthday sama-sama 8), blend jadi penekanan "
+        "kuat pada tema itu.\n\n"
         "## 🌞 Vibe Hari Ini\n"
-        "Sapa gw pake nama depan, sebutin hari & tanggal. Rangkai energi hari ini + vibe bulan "
-        "ini + tema tahun ini jadi **satu cerita mengalir** (bukan daftar). Paling tebal di "
-        "energi hari ini — 2-3 kalimat yg bikin gw bisa ngerasain energinya.\n\n"
-        "## 👤 Siapa Lo, Menurut Gw\n"
-        "Ulasan karakter — cerita 'siapa lo'. Gabungin observasi dari misi hidup, bakat "
-        "bawaan, panggilan hati, aura luar, talenta lahir **+ lapisan cara tampil / emosi "
-        "internal / first impression** jadi narasi utuh. Highlight paradoks/harmoni kalo ada. "
-        "Min 2 paragraf.\n\n"
+        "Sebutin hari & tanggal. Rangkai energi hari ini + vibe bulan ini + tema tahun ini "
+        "jadi satu cerita mengalir. Paling tebal di energi hari ini — 2-3 kalimat yg bikin "
+        "gw bisa ngerasain energinya.\n\n"
+        "## 👤 Kompleksitas Karakter Lo\n"
+        "Zoom-in lebih dalem dari intro tadi. Ulasan 2-3 paragraf soal paradoks/harmoni "
+        "antar aspek (misi vs bakat, aura luar vs panggilan hati dalem, dst). **Gabungin juga "
+        "lapisan cara tampil / emosi internal / first impression** dari data tambahan — tapi "
+        "tanpa pernah sebut 'astrologi' atau nama rasi.\n\n"
         "## 💡 Tips Buat Hari Ini\n"
-        "3-4 tips praktis yang nyambung sama energi hari ini + karakter lo. Bullet points. "
-        "Spesifik & actionable. Contoh bentuk: 'Hari bagus buat...', 'Hindarin dulu...', "
-        "'Kalo ada keputusan soal X, pertimbangin...'.\n\n"
+        "3-4 tips actionable yg nyambung sama energi hari ini + karakter lo. Bullet points. "
+        "Spesifik — bukan 'be yourself' tapi 'coba hari ini lo [aksi spesifik]'.\n\n"
         "## 🗓️ Tips Bulan Ini\n"
         "2-3 tips zoom-out buat sebulan. Tema besarnya apa? Apa yg cocok di-prioritize / "
-        "dihindari bulan ini?\n\n"
+        "dihindari?\n\n"
         "## 🌱 Tema Tahun Ini\n"
-        "1 paragraf soal tema besar tahun ini — apa chapter yg lo jalanin, apa yang bijak "
-        "difokusin / di-release sepanjang tahun.\n\n"
+        "1 paragraf soal tema besar tahun ini.\n\n"
         "## 💬 Yuk Ngobrol\n"
-        "Tutup hangat — undang ngobrol soal karir, cinta, keluarga, atau hal spesifik yg "
-        "nyambung sama vibe hari ini.\n\n"
+        "Tutup hangat — undang ngobrol soal karir, cinta, keluarga, atau hal spesifik.\n\n"
         "**Style:** casual 'lo/gw', hangat, sedikit humor kalo pas. **Zero jargon teknis**. "
         "Astrologi WAJIB invisible."
     )
@@ -333,7 +348,6 @@ if st.session_state.profile is None:
 else:
     profile = st.session_state.profile
     zodiac = st.session_state.zodiac
-    render_profile_panel(profile)
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
@@ -375,6 +389,18 @@ else:
             st.write(f"Jam: {zodiac['birth_time']}")
         if zodiac and zodiac.get("birth_city"):
             st.write(f"Kota: {zodiac['birth_city']}")
+
+        with st.expander("📊 Angka-angka lo"):
+            for label, key in [
+                ("Misi Hidup", "life_path"),
+                ("Bakat Bawaan", "expression"),
+                ("Panggilan Hati", "soul_urge"),
+                ("Aura Luar", "personality"),
+                ("Talenta Lahir", "birthday"),
+            ]:
+                num = profile[key]
+                st.markdown(f"**{label}:** `{num}` · _{ARCHETYPES[num]}_")
+
         st.caption("💾 Sesi lo auto-tersimpen di browser — bisa tutup tab, balik lagi kapan aja.")
         if st.button("Reset sesi", use_container_width=True):
             clear_session_storage()
