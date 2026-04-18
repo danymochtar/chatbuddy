@@ -632,6 +632,23 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
             st.markdown(rel["analysis"])
 
 
+def handle_chat_turn(profile: dict, zodiac: dict | None) -> None:
+    user_input = st.chat_input(t("chat_placeholder"))
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            full_text = stream_assistant(
+                messages_for_api=to_anthropic_messages(st.session_state.messages),
+                system=system_prompt(profile, zodiac, today_local()),
+                placeholder=placeholder,
+            )
+        st.session_state.messages.append({"role": "assistant", "content": full_text})
+        save_session_to_storage()
+
+
 def build_full_profile(
     full_name: str,
     dob: date,
@@ -871,21 +888,6 @@ else:
             save_session_to_storage()
             st.rerun()
 
-        user_input = st.chat_input(t("chat_placeholder"))
-        if user_input:
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            with st.chat_message("user"):
-                st.markdown(user_input)
-            with st.chat_message("assistant"):
-                placeholder = st.empty()
-                full_text = stream_assistant(
-                    messages_for_api=to_anthropic_messages(st.session_state.messages),
-                    system=system_prompt(profile, zodiac, today_local()),
-                    placeholder=placeholder,
-                )
-            st.session_state.messages.append({"role": "assistant", "content": full_text})
-            save_session_to_storage()
-
     elif page == "karakter":
         render_cached_text_page("karakter", kompleksitas_prompt, profile, zodiac)
 
@@ -900,3 +902,5 @@ else:
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
+
+    handle_chat_turn(profile, zodiac)
