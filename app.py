@@ -1,26 +1,26 @@
 import os
 from datetime import date
 
-import anthropic
 import streamlit as st
+from google import genai
+from google.genai import types
 
 from numerology import build_profile
 
-MODEL = "claude-opus-4-7"
-MAX_TOKENS = 2048
+MODEL = "gemini-2.5-flash"
 
 
-def get_client() -> anthropic.Anthropic:
-    api_key = st.secrets.get("ANTHROPIC_API_KEY") if hasattr(st, "secrets") else None
-    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+def get_client() -> genai.Client:
+    api_key = st.secrets.get("GEMINI_API_KEY") if hasattr(st, "secrets") else None
+    api_key = api_key or os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        st.error("ANTHROPIC_API_KEY belum di-set. Tambahin di Streamlit secrets atau env variable.")
+        st.error("GEMINI_API_KEY belum di-set. Tambahin di Streamlit secrets atau env variable.")
         st.stop()
-    return anthropic.Anthropic(api_key=api_key)
+    return genai.Client(api_key=api_key)
 
 
-def system_prompt(profile: dict) -> list:
-    base = (
+def system_prompt(profile: dict) -> str:
+    return (
         "Lo adalah ChatBuddy — AI teman deket yang ngerti numerologi Pythagorean "
         "dan pake data numerologi user buat ngejawab pertanyaan mereka soal hidup, "
         "personality, karir, percintaan, pertemanan, keluarga, dan masalah personal lainnya.\n\n"
@@ -50,7 +50,14 @@ def system_prompt(profile: dict) -> list:
         "- Personality: gimana orang lain lihat lo di first impression\n"
         "- Birthday: talenta spesifik yang lo bawa sejak lahir\n"
     )
-    return [{"type": "text", "text": base, "cache_control": {"type": "ephemeral"}}]
+
+
+def to_gemini_contents(messages: list) -> list:
+    contents = []
+    for msg in messages:
+        role = "user" if msg["role"] == "user" else "model"
+        contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
+    return contents
 
 
 def render_profile(profile: dict) -> None:
@@ -133,14 +140,16 @@ else:
         with st.chat_message("assistant"):
             placeholder = st.empty()
             full_text = ""
-            with client.messages.stream(
+            stream = client.models.generate_content_stream(
                 model=MODEL,
-                max_tokens=MAX_TOKENS,
-                system=system_prompt(profile),
-                messages=st.session_state.messages,
-            ) as stream:
-                for text in stream.text_stream:
-                    full_text += text
+                contents=to_gemini_contents(st.session_state.messages),
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt(profile),
+                ),
+            )
+            for chunk in stream:
+                if chunk.text:
+                    full_text += chunk.text
                     placeholder.markdown(full_text + "▌")
             placeholder.markdown(full_text)
 
