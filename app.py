@@ -54,8 +54,12 @@ def system_prompt(profile: dict) -> str:
 
 def to_gemini_contents(messages: list) -> list:
     contents = []
+    started = False
     for msg in messages:
         role = "user" if msg["role"] == "user" else "model"
+        if not started and role != "user":
+            continue
+        started = True
         contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
     return contents
 
