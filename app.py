@@ -1071,11 +1071,11 @@ else:
             ("🔍", t("nav_inner"), "inner"),
             ("🎓", t("nav_karmic"), "karmic"),
             ("🎯", t("nav_fase"), "fase"),
+            ("💑", t("nav_relationship"), "relationship"),
             ("🗓️", t("nav_arah"), "arah"),
             ("♈", t("nav_zodiak"), "zodiak"),
             ("🐉", t("nav_shio"), "shio"),
             ("🌿", t("nav_weton"), "weton"),
-            ("💑", t("nav_relationship"), "relationship"),
         ]
         for emoji, label, key in nav_items:
             is_active = st.session_state.current_page == key
