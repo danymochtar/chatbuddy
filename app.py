@@ -256,6 +256,40 @@ def load_session_from_storage() -> bool:
         except Exception:
             dob = None
 
+        # Refresh daily/monthly/yearly numbers if the saved 'today' is stale
+        # (user opened the app yesterday, comes back today → personal_day
+        # changed, maybe personal_month too).
+        if dob is not None:
+            current_today = today_local()
+            if profile.get("today") != current_today.isoformat():
+                try:
+                    from numerology import (
+                        personal_year as _py,
+                        personal_month as _pm,
+                        personal_day as _pd,
+                        current_pinnacle_challenge as _cpc,
+                        YEAR_THEMES as _YT,
+                        MONTH_THEMES as _MT,
+                        DAILY_VIBES as _DV,
+                    )
+                    profile["today"] = current_today.isoformat()
+                    profile["personal_year"] = _py(dob, current_today)
+                    profile["personal_month"] = _pm(dob, current_today)
+                    profile["personal_day"] = _pd(dob, current_today)
+                    profile["current_phase"] = _cpc(dob, current_today)
+                    profile.setdefault("meanings", {})
+                    profile["meanings"]["personal_year"] = _YT[profile["personal_year"]]
+                    profile["meanings"]["personal_month"] = _MT[profile["personal_month"]]
+                    profile["meanings"]["personal_day"] = _DV[profile["personal_day"]]
+                    # Daily content is stale — regenerate opening + arah + fase
+                    st.session_state.opening_generated = False
+                    st.session_state.messages = []
+                    st.session_state.cached_pages.pop("arah", None)
+                    st.session_state.cached_pages.pop("fase", None)
+                    migrated = True
+                except Exception:
+                    pass
+
         if dob is not None:
             if not zodiac.get("shio"):
                 zodiac["shio"] = chinese_zodiac(dob)
