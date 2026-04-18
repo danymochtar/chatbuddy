@@ -227,6 +227,117 @@ def maturity_number(life_path_num: int, expression_num: int) -> int:
     return reduce_number(life_path_num + expression_num)
 
 
+def balance_number(full_name: str) -> int:
+    total = 0
+    for word in full_name.upper().split():
+        for ch in word:
+            if ch in PYTHAGOREAN:
+                total += PYTHAGOREAN[ch]
+                break
+    return reduce_number(total)
+
+
+def rational_thought(birthday_num: int, expression_num: int) -> int:
+    return reduce_number(birthday_num + expression_num)
+
+
+def _first_pinnacle_end_age(lp: int) -> int:
+    lp_reduced = lp if lp not in MASTER_NUMBERS else reduce_number(lp // 10 + lp % 10)
+    return 36 - lp_reduced
+
+
+def pinnacles(dob: date) -> list[dict]:
+    m = reduce_number(dob.month)
+    d = reduce_number(dob.day)
+    y = reduce_number(digit_sum(dob.year))
+    p1 = reduce_number(m + d)
+    p2 = reduce_number(d + y)
+    p3 = reduce_number(p1 + p2)
+    p4 = reduce_number(m + y)
+    lp = life_path(dob)
+    end1 = _first_pinnacle_end_age(lp)
+    return [
+        {"period": 1, "start_age": 0, "end_age": end1, "number": p1},
+        {"period": 2, "start_age": end1 + 1, "end_age": end1 + 9, "number": p2},
+        {"period": 3, "start_age": end1 + 10, "end_age": end1 + 18, "number": p3},
+        {"period": 4, "start_age": end1 + 19, "end_age": None, "number": p4},
+    ]
+
+
+def _abs_reduce(n: int) -> int:
+    n = abs(n)
+    while n > 9 and n not in MASTER_NUMBERS:
+        n = sum(int(d) for d in str(n))
+    return n
+
+
+def challenges(dob: date) -> list[dict]:
+    m = reduce_number(dob.month)
+    d = reduce_number(dob.day)
+    y = reduce_number(digit_sum(dob.year))
+    c1 = _abs_reduce(m - d)
+    c2 = _abs_reduce(d - y)
+    c3 = _abs_reduce(c1 - c2)
+    c4 = _abs_reduce(m - y)
+    lp = life_path(dob)
+    end1 = _first_pinnacle_end_age(lp)
+    return [
+        {"period": 1, "start_age": 0, "end_age": end1, "number": c1},
+        {"period": 2, "start_age": end1 + 1, "end_age": end1 + 9, "number": c2},
+        {"period": 3, "start_age": end1 + 10, "end_age": end1 + 18, "number": c3},
+        {"period": 4, "start_age": end1 + 19, "end_age": None, "number": c4},
+    ]
+
+
+def current_pinnacle_challenge(dob: date, today: date) -> dict:
+    age = (today - dob).days // 365
+    pins = pinnacles(dob)
+    chals = challenges(dob)
+    for i, p in enumerate(pins):
+        end = p["end_age"] if p["end_age"] is not None else 999
+        if age <= end:
+            return {
+                "age": age,
+                "period": p["period"],
+                "pinnacle": p["number"],
+                "challenge": chals[i]["number"],
+            }
+    return {
+        "age": age,
+        "period": 4,
+        "pinnacle": pins[-1]["number"],
+        "challenge": chals[-1]["number"],
+    }
+
+
+PINNACLE_MEANINGS = {
+    1: "fase kepemimpinan & inisiatif — saat jadi diri sendiri, berani ambil risiko",
+    2: "fase sabar & bangun hubungan — diplomasi, kerja dengan orang lain",
+    3: "fase ekspresi & kreativitas — karya, sosial, joy",
+    4: "fase kerja keras & fondasi — bangun sistem, disiplin, stabilitas",
+    5: "fase perubahan & kebebasan — adventure, eksplor hal baru",
+    6: "fase tanggung jawab & keluarga — komitmen, nurture orang terdekat",
+    7: "fase introspektif & spiritual — refleksi, cari wisdom, inner work",
+    8: "fase power & pencapaian — karir, finansial, legacy",
+    9: "fase penutupan & humanis — legacy, service, letting go",
+    11: "master pinnacle — awakening, jadi inspirator",
+    22: "master pinnacle — building impact jangka panjang",
+    33: "master pinnacle — service ke komunitas besar",
+}
+
+CHALLENGE_MEANINGS = {
+    0: "tantangan universal — dari dalem diri sendiri, eksplorasi karakter bebas",
+    1: "tantangan assertiveness — belajar stand up buat diri sendiri tanpa ego",
+    2: "tantangan kesabaran & kerja sama — kelola sensitivity, ga over-people-pleasing",
+    3: "tantangan ekspresi — kelola mood swing, jangan kebawa emosi",
+    4: "tantangan disiplin & detail — kelola rasa stuck / kewalahan sama rutinitas",
+    5: "tantangan kebebasan — jangan lari dari komitmen atau kecanduan sensasi",
+    6: "tantangan responsibility — balance antara ngurus orang & diri sendiri",
+    7: "tantangan kepercayaan — jangan isolate diri, belajar open-up ke orang",
+    8: "tantangan power & uang — belajar equitable dengan uang & autoritas",
+}
+
+
 def build_profile(
     full_name: str,
     dob: date,
@@ -251,6 +362,11 @@ def build_profile(
     lessons = karmic_lessons(full_name)
     passion = hidden_passion(full_name)
     maturity = maturity_number(lp, ex)
+    balance = balance_number(full_name)
+    rational = rational_thought(bd, ex)
+    pins = pinnacles(dob)
+    chals = challenges(dob)
+    current = current_pinnacle_challenge(dob, today)
     nick = (nickname or "").strip() or full_name.strip().split()[0]
     return {
         "full_name": full_name,
@@ -269,6 +385,11 @@ def build_profile(
         "karmic_lessons": lessons,
         "hidden_passion": passion,
         "maturity": maturity,
+        "balance": balance,
+        "rational_thought": rational,
+        "pinnacles": pins,
+        "challenges": chals,
+        "current_phase": current,
         "meanings": {
             "life_path": MEANINGS[lp],
             "expression": MEANINGS[ex],
@@ -279,5 +400,7 @@ def build_profile(
             "personal_month": MONTH_THEMES[pm],
             "personal_day": DAILY_VIBES[pd],
             "maturity": MEANINGS[maturity],
+            "balance": MEANINGS[balance],
+            "rational_thought": MEANINGS[rational],
         },
     }

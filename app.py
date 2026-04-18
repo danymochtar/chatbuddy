@@ -9,6 +9,8 @@ from numerology import (
     ARCHETYPES,
     KARMIC_DEBT_MEANINGS,
     LESSON_MEANINGS,
+    PINNACLE_MEANINGS,
+    CHALLENGE_MEANINGS,
     build_profile,
     today_local,
 )
@@ -71,6 +73,7 @@ TEXTS = {
     "nav_inner": {"id": "Aspek Dalam", "en": "Inner Aspect"},
     "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
     "nav_arah": {"id": "Arah Bulan & Tahun", "en": "Month & Year Guide"},
+    "nav_fase": {"id": "Fase Hidup", "en": "Life Phases"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
     "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
@@ -325,9 +328,48 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
             f"Maturity number (fokus setelah umur ~35): {maturity} "
             f"({ARCHETYPES[maturity]}) — {profile['meanings']['maturity']}"
         )
+    balance = profile.get("balance")
+    if balance:
+        minor_lines.append(
+            f"Balance number (cara dia handle emosi saat stres): {balance} "
+            f"({ARCHETYPES[balance]}) — {profile['meanings']['balance']}"
+        )
+    rational = profile.get("rational_thought")
+    if rational:
+        minor_lines.append(
+            f"Rational thought (gaya proses mental / cara berpikir): {rational} "
+            f"({ARCHETYPES[rational]}) — {profile['meanings']['rational_thought']}"
+        )
     if minor_lines:
         lines += ["", "-- Minor aspects (buat kedalaman; blend halus saat relevan) --"]
         lines += minor_lines
+
+    # Life phases (pinnacles & challenges)
+    current = profile.get("current_phase") or {}
+    pins = profile.get("pinnacles") or []
+    chals = profile.get("challenges") or []
+    if current and pins and chals:
+        lines += ["", "-- Fase hidup (pinnacles & challenges; blend halus, jangan sebut istilah teknis) --"]
+        lines.append(f"Umur user saat ini: {current.get('age')}")
+        lines.append(
+            f"Fase sekarang (period {current.get('period')}): "
+            f"Pinnacle {current.get('pinnacle')} ({PINNACLE_MEANINGS.get(current.get('pinnacle'), '')}), "
+            f"Challenge {current.get('challenge')} ({CHALLENGE_MEANINGS.get(current.get('challenge'), '')})"
+        )
+        lines.append("Semua pinnacles (fase peluang):")
+        for p in pins:
+            end = p["end_age"] if p["end_age"] is not None else "seterusnya"
+            lines.append(
+                f"  Fase {p['period']} (umur {p['start_age']}-{end}): pinnacle {p['number']} "
+                f"({PINNACLE_MEANINGS.get(p['number'], '')})"
+            )
+        lines.append("Semua challenges (obstacle per fase):")
+        for c in chals:
+            end = c["end_age"] if c["end_age"] is not None else "seterusnya"
+            lines.append(
+                f"  Fase {c['period']} (umur {c['start_age']}-{end}): challenge {c['number']} "
+                f"({CHALLENGE_MEANINGS.get(c['number'], '')})"
+            )
 
     if zodiac and zodiac.get("sun"):
         lines += [
@@ -405,15 +447,41 @@ def kompleksitas_prompt() -> str:
 def inner_prompt() -> str:
     return (
         "Tulis tentang **aspek dalam** gw — hal-hal yg ga kelihatan dari luar tapi jadi motor "
-        "dalem. Fokus ke:\n"
+        "dalem. Fokus ke 4 hal:\n"
         "1. **Obsesi tersembunyi** (drive yg paling sering nongol, dari pola nama lo) — "
-        "ini yg sering keluar di pilihan-pilihan kecil lo sehari-hari.\n"
+        "ini yg sering keluar di pilihan-pilihan kecil sehari-hari.\n"
         "2. **Versi dewasa lo** (siapa lo akan grow into setelah umur ~35) — bagaimana "
         "karakter lo bakal matang.\n"
-        "3. Dinamika antara siapa lo sekarang vs siapa lo bakal jadi.\n\n"
-        "Pake heading ## di atas (misal `## 🔍 Aspek Dalam Lo`). 3-4 paragraf storytelling. "
+        "3. **Cara lo handle emosi saat stres** (balance number) — respon natural lo saat "
+        "kesusahan / tekanan.\n"
+        "4. **Gaya berpikir lo** (rational thought) — cara natural lo memproses informasi "
+        "& ambil keputusan mental.\n\n"
+        "Pake heading ## di atas (misal `## 🔍 Aspek Dalam Lo`). 4-5 paragraf storytelling. "
         "Angka dalam kurung saat nyebut trait. **Zero istilah teknis** ('hidden passion', "
-        "'maturity number' dll JANGAN disebut)."
+        "'maturity number', 'balance number', 'rational thought' dll JANGAN disebut)."
+    )
+
+
+def fase_prompt() -> str:
+    return (
+        "Tulis tentang **fase hidup** gw — perjalanan besar dari masa lampau, sekarang, "
+        "sampai masa depan. Pake data pinnacles (4 fase peluang) + challenges (4 obstacle "
+        "per fase) + umur gw sekarang.\n\n"
+        "Struktur pake heading ##:\n\n"
+        "## 🎯 Fase Hidup Lo\n"
+        "1 paragraf intro — kasih tau bahwa hidup lo terbagi 4 fase besar, tiap fase punya "
+        "peluang & tantangan spesifik.\n\n"
+        "## ✨ Fase Sekarang\n"
+        "Zoom-in ke fase lo saat ini: umur berapa sampai berapa, apa temanya, apa "
+        "challenge-nya, bagaimana navigate-nya. 2 paragraf.\n\n"
+        "## 🗺️ Peta Fase-Fase Lo\n"
+        "Ringkasan 4 fase dalam list: untuk setiap fase sebutin rentang umur + tema peluang "
+        "+ tantangan yg mendampingi. Format bullet atau numbered list.\n\n"
+        "## 💡 Tips Buat Fase Sekarang\n"
+        "2-3 tips actionable buat memaksimalkan fase yg lagi lo jalani. Spesifik sesuai "
+        "karakter + tema fase.\n\n"
+        "**Zero istilah teknis** ('pinnacle', 'challenge' dll JANGAN disebut — pake "
+        "'fase', 'tantangan', 'peluang'). Tone: temen deket yg ngeliat peta hidup lo."
     )
 
 
@@ -461,20 +529,27 @@ def relationship_prompt(partner_profile: dict) -> str:
     partner_block = "\n".join(p_lines)
     return (
         f"Gw mau tau gimana dinamika gw sama orang ini:\n\n{partner_block}\n\n"
-        "Bikinin analisa compatibility (2-4 paragraf storytelling + 1 list tips) yg blend "
-        "karakter gw vs karakter dia:\n\n"
+        "Pake konteks energi hari ini, vibe bulan ini, dan tema tahun ini gw juga (udah "
+        "ada di system prompt) saat kasih insight timing.\n\n"
+        "Bikinin analisa compatibility yg blend karakter gw vs karakter dia. Pake heading ##:\n\n"
         "## 💫 Chemistry Karakter\n"
         "Gimana personality lo dua nyambung atau gesekan. Sebutin aspek mana yg klop (dan "
-        "kenapa), aspek mana yg bisa bikin friksi. Tunjukin dinamika kayak yin-yang: yg "
-        "saling komplemen vs yg mirip-mirip.\n\n"
+        "kenapa), aspek mana yg bisa bikin friksi. Tunjukin dinamika kayak yin-yang.\n\n"
         "## 💬 Cara Komunikasi\n"
-        "Gimana lo dua sebaiknya ngomong satu sama lain. Tone lo sendiri kyk apa, tone dia "
-        "kyk apa, gimana ketemuin tengahnya.\n\n"
+        "Gimana lo dua sebaiknya ngomong. Tone lo kyk apa, tone dia kyk apa, gimana "
+        "ketemuin tengahnya.\n\n"
         "## 🌱 Growth Together\n"
-        "2-3 tips actionable buat bikin hubungan ini tumbuh. Yg harus lo waspadain vs yg "
-        "harus lo hargain.\n\n"
+        "2-3 tips actionable buat hubungan ini tumbuh. Waspadain vs hargain.\n\n"
+        "## 🌞 Vibe Buat Hari Ini\n"
+        "1-2 tips konkret buat hari ini berdasarkan energi hari ini lo (dari system prompt) — "
+        "apa yg cocok lo dua lakuin bareng hari ini, apa yg bijak dihindari hari ini.\n\n"
+        "## 🗓️ Vibe Bulan & Tahun Ini\n"
+        "1 paragraf — kasih hint gimana dinamika hubungan ini bakal kerasa sepanjang "
+        "bulan ini (vibe bulan lo) dan chapter tahun ini (tema tahun lo). Yg diperjuangin "
+        "bulan ini vs yg bijak di-hold buat tahun ini.\n\n"
         "Style: temen curhat, bukan therapy session kaku. **Zero istilah teknis** (jangan "
-        "sebut Life Path dll — blend halus). Pake angka dalam kurung kalo perlu biar clear."
+        "sebut Life Path / zodiac / Personal Year dll — blend halus). Pake angka dalam "
+        "kurung kalo perlu biar clear."
     )
 
 
@@ -799,6 +874,7 @@ else:
             ("👤", t("nav_karakter"), "karakter"),
             ("🔍", t("nav_inner"), "inner"),
             ("🎓", t("nav_karmic"), "karmic"),
+            ("🎯", t("nav_fase"), "fase"),
             ("🗓️", t("nav_arah"), "arah"),
             ("💑", t("nav_relationship"), "relationship"),
         ]
@@ -899,6 +975,9 @@ else:
 
     elif page == "arah":
         render_cached_text_page("arah", arah_prompt, profile, zodiac)
+
+    elif page == "fase":
+        render_cached_text_page("fase", fase_prompt, profile, zodiac)
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
