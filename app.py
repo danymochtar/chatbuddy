@@ -5,7 +5,13 @@ from datetime import date, datetime, time
 import anthropic
 import streamlit as st
 
-from numerology import ARCHETYPES, build_profile, today_local
+from numerology import (
+    ARCHETYPES,
+    KARMIC_DEBT_MEANINGS,
+    LESSON_MEANINGS,
+    build_profile,
+    today_local,
+)
 from zodiac import JAKARTA_COORDS, SIGN_TRAITS, compute_chart, geocode_city, sun_sign
 
 MODEL = "claude-haiku-4-5"
@@ -106,7 +112,15 @@ def base_persona() -> str:
         "- Numerologi boleh disinggung halus ('pola angka lahir lo'), tapi hindari istilah "
         "teknis + jangan sebut angkanya.\n"
         "- Pake bahasa karakter: 'misi hidup', 'bakat bawaan', 'panggilan hati', 'aura luar', "
-        "'energi hari ini', 'vibe bulan ini', 'tema tahun ini'.\n\n"
+        "'energi hari ini', 'vibe bulan ini', 'tema tahun ini'.\n"
+        "- **Karmic debts & lessons**: jangan sebut 'karmic debt' atau 'karmic lesson'. Ubah "
+        "jadi 'PR hidup lo', 'pelajaran yang harus lo kuasain', 'rem yang harus dijaga', 'tema "
+        "yang keliatan absen dari karakter lo'. Blend ke narasi saat relevan.\n"
+        "- **Hidden passion**: sampein sebagai 'obsesi tersembunyi lo' atau 'drive yang paling "
+        "sering nongol'.\n"
+        "- **Maturity number**: sampein sebagai 'lo akan grow into sosok yg ...' atau 'versi "
+        "dewasa lo (sekitar umur 35+)'.\n"
+        "- **Panggil user pake nickname yang disediain** di profil, bukan nama lengkap.\n\n"
         "**Gaya ngomong:**\n"
         "- Casual temen deket — 'lo/gw' atau 'kamu/aku' nyesuain vibe user\n"
         "- Empatik, ga judgemental, validate feelings dulu sebelum kasih saran\n"
@@ -120,18 +134,58 @@ def base_persona() -> str:
 
 
 def profile_block(profile: dict, zodiac: dict | None) -> str:
+    nick = profile.get("nickname", profile["full_name"].split()[0])
     lines = [
         "=== PROFIL USER (konteks internal — jangan expose istilahnya) ===",
         f"Nama: {profile['full_name']}",
+        f"Panggilan (pake ini saat sapaan): {nick}",
         f"Tanggal lahir: {profile['dob']}",
         "",
-        "-- Baca karakter (pake archetype label & angka dalam kurung seperlunya) --",
+        "-- Baca karakter utama (pake archetype & angka dalam kurung seperlunya) --",
         f"Misi hidup → angka {profile['life_path']} ({ARCHETYPES[profile['life_path']]}): {profile['meanings']['life_path']}",
         f"Bakat bawaan → angka {profile['expression']} ({ARCHETYPES[profile['expression']]}): {profile['meanings']['expression']}",
         f"Panggilan hati → angka {profile['soul_urge']} ({ARCHETYPES[profile['soul_urge']]}): {profile['meanings']['soul_urge']}",
         f"Aura luar → angka {profile['personality']} ({ARCHETYPES[profile['personality']]}): {profile['meanings']['personality']}",
         f"Talenta lahir → angka {profile['birthday']} ({ARCHETYPES[profile['birthday']]}): {profile['meanings']['birthday']}",
     ]
+
+    # Karmic + minor aspects
+    minor_lines = []
+    debts = profile.get("karmic_debts") or {}
+    debt_labels = {
+        "life_path": "misi hidup", "expression": "bakat bawaan",
+        "soul_urge": "panggilan hati", "personality": "aura luar",
+    }
+    for k, v in debts.items():
+        if v:
+            minor_lines.append(
+                f"KARMIC DEBT {v} di {debt_labels[k]} — {KARMIC_DEBT_MEANINGS[v]}"
+            )
+    lessons = profile.get("karmic_lessons") or []
+    if lessons:
+        minor_lines.append("Karmic lessons (angka yg ga ada di nama → butuh dipelajarin seumur hidup):")
+        for n in lessons:
+            minor_lines.append(f"  {n} ({ARCHETYPES[n]}): {LESSON_MEANINGS[n]}")
+    passion = profile.get("hidden_passion") or []
+    if passion:
+        if len(passion) == 1:
+            minor_lines.append(
+                f"Hidden passion (drive terkuat, sering muncul): {passion[0]} "
+                f"({ARCHETYPES[passion[0]]})"
+            )
+        else:
+            names = ", ".join(f"{n} ({ARCHETYPES[n]})" for n in passion)
+            minor_lines.append(f"Hidden passions (drive ganda, ada ikatan): {names}")
+    maturity = profile.get("maturity")
+    if maturity:
+        minor_lines.append(
+            f"Maturity number (fokus setelah umur ~35): {maturity} "
+            f"({ARCHETYPES[maturity]}) — {profile['meanings']['maturity']}"
+        )
+    if minor_lines:
+        lines += ["", "-- Minor aspects (buat kedalaman; blend halus saat relevan) --"]
+        lines += minor_lines
+
     if zodiac and zodiac.get("sun"):
         lines += [
             "",
@@ -148,11 +202,12 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
 def daily_block(profile: dict, today: date) -> str:
     return (
         f"=== VIBE HARI INI ({format_today_id(today)}) ===\n"
-        f"Tema tahun ini: {profile['meanings']['personal_year']}\n"
-        f"Vibe bulan ini (angka {profile['personal_month']}): ulas berdasarkan tema angka\n"
-        f"Energi hari ini: {profile['meanings']['personal_day']}\n\n"
-        "Pake ini buat kasih konteks timing dan tips praktis. "
-        "JANGAN sebut 'Personal Day/Month/Year' — sampein kyk lo emang 'tau' vibe-nya."
+        f"Tema tahun ini (angka {profile['personal_year']}): {profile['meanings']['personal_year']}\n"
+        f"Vibe bulan ini (angka {profile['personal_month']}): {profile['meanings']['personal_month']}\n"
+        f"Energi hari ini (angka {profile['personal_day']}): {profile['meanings']['personal_day']}\n\n"
+        "Pake ini buat kasih konteks timing — tips hari ini, bulan, dan tahun dirangkum "
+        "jadi satu panduan yg saling nyambung. JANGAN sebut 'Personal Day/Month/Year' — "
+        "sampein kyk lo emang 'tau' vibe-nya."
     )
 
 
@@ -193,14 +248,19 @@ def opening_prompt() -> str:
         "antar aspek (misi vs bakat, aura luar vs panggilan hati dalem, dst). **Gabungin juga "
         "lapisan cara tampil / emosi internal / first impression** dari data tambahan — tapi "
         "tanpa pernah sebut 'astrologi' atau nama rasi.\n\n"
-        "## 💡 Tips Buat Hari Ini\n"
-        "3-4 tips actionable yg nyambung sama energi hari ini + karakter lo. Bullet points. "
-        "Spesifik — bukan 'be yourself' tapi 'coba hari ini lo [aksi spesifik]'.\n\n"
-        "## 🗓️ Tips Bulan Ini\n"
-        "2-3 tips zoom-out buat sebulan. Tema besarnya apa? Apa yg cocok di-prioritize / "
-        "dihindari?\n\n"
-        "## 🌱 Tema Tahun Ini\n"
-        "1 paragraf soal tema besar tahun ini.\n\n"
+        "## 💡 Arah & Tips Buat Lo\n"
+        "SATU section yang blend tips hari ini + bulan ini + tahun ini jadi panduan yang "
+        "saling nyambung. Alurnya: dari immediate (hari ini) → zoom-out (bulan ini) → "
+        "chapter besar (tahun ini). Format bebas (bisa bullet, bisa paragraf pendek) tapi "
+        "hubungkan satu sama lain — bukan 3 list terpisah.\n\n"
+        "Contoh alur:\n"
+        "- Hari ini: [aksi spesifik sesuai energi hari ini + karakter]\n"
+        "- Beberapa minggu ke depan: [tema bulan ini + cara navigatenya]\n"
+        "- Chapter tahun ini: [tema tahun + apa yg bijak difokusin / di-release]\n"
+        "- Hati-hati kalo: [warning dari karakter/debts yg relevan]\n\n"
+        "Harus 4-6 poin total. Spesifik, actionable — bukan 'be yourself' tapi aksi yg "
+        "bisa langsung dikerjain. Kalo ada karmic debt yg relevan sama energi sekarang, "
+        "selipin halus.\n\n"
         "## 💬 Yuk Ngobrol\n"
         "Tutup hangat — undang ngobrol soal karir, cinta, keluarga, atau hal spesifik.\n\n"
         "**Style:** casual 'lo/gw', hangat, sedikit humor kalo pas. **Zero jargon teknis**. "
@@ -258,8 +318,9 @@ def build_full_profile(
     dob: date,
     birth_time: time | None,
     birth_city: str | None,
+    nickname: str | None = None,
 ) -> tuple[dict, dict]:
-    profile = build_profile(full_name, dob)
+    profile = build_profile(full_name, dob, nickname=nickname)
     zodiac = {
         "sun": sun_sign(dob),
         "moon": None,
@@ -303,7 +364,16 @@ if "storage_loaded" not in st.session_state:
 if st.session_state.profile is None:
     st.subheader("Kenalan dulu yuk")
     with st.form("profile_form"):
-        full_name = st.text_input("Nama lengkap (sesuai akta lahir)", placeholder="Contoh: Budi Santoso")
+        full_name = st.text_input(
+            "Nama lengkap (sesuai akta lahir)",
+            placeholder="Contoh: Budi Santoso",
+            help="Angka-angkanya dihitung dari nama ini",
+        )
+        nickname = st.text_input(
+            "Panggilan / nickname (opsional)",
+            placeholder="Biarin kosong buat pake nama depan",
+            help="Ini yg ChatBuddy pakai buat sapa lo",
+        )
         dob = st.date_input(
             "Tanggal lahir",
             min_value=date(1900, 1, 1),
@@ -338,6 +408,7 @@ if st.session_state.profile is None:
                 dob,
                 birth_time_obj,
                 birth_city.strip() or None,
+                nickname=nickname.strip() or None,
             )
             st.session_state.profile = profile
             st.session_state.zodiac = zodiac
@@ -383,14 +454,15 @@ else:
 
     with st.sidebar:
         st.header("Sesi")
-        st.write(f"**{profile['full_name']}**")
+        nick_display = profile.get("nickname") or profile["full_name"].split()[0]
+        st.write(f"**{nick_display}** _({profile['full_name']})_")
         st.write(f"Lahir: {profile['dob']}")
         if zodiac and zodiac.get("birth_time"):
             st.write(f"Jam: {zodiac['birth_time']}")
         if zodiac and zodiac.get("birth_city"):
             st.write(f"Kota: {zodiac['birth_city']}")
 
-        with st.expander("📊 Angka-angka lo"):
+        with st.expander("📊 Angka utama"):
             for label, key in [
                 ("Misi Hidup", "life_path"),
                 ("Bakat Bawaan", "expression"),
@@ -400,6 +472,30 @@ else:
             ]:
                 num = profile[key]
                 st.markdown(f"**{label}:** `{num}` · _{ARCHETYPES[num]}_")
+
+        with st.expander("🔍 Aspek dalam"):
+            debts = profile.get("karmic_debts") or {}
+            debt_labels = {
+                "life_path": "Misi Hidup", "expression": "Bakat Bawaan",
+                "soul_urge": "Panggilan Hati", "personality": "Aura Luar",
+            }
+            active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
+            if active_debts:
+                st.markdown("**PR hidup (karmic debt):**")
+                for lbl, val in active_debts:
+                    st.markdown(f"- {lbl}: `{val}`")
+            lessons = profile.get("karmic_lessons") or []
+            if lessons:
+                st.markdown(f"**Pelajaran hidup:** {', '.join(str(n) for n in lessons)}")
+            else:
+                st.markdown("**Pelajaran hidup:** lengkap (semua angka ada di nama)")
+            passion = profile.get("hidden_passion") or []
+            if passion:
+                names = ", ".join(f"`{n}` ({ARCHETYPES[n]})" for n in passion)
+                st.markdown(f"**Obsesi tersembunyi:** {names}")
+            maturity = profile.get("maturity")
+            if maturity:
+                st.markdown(f"**Versi dewasa lo:** `{maturity}` · _{ARCHETYPES[maturity]}_")
 
         st.caption("💾 Sesi lo auto-tersimpen di browser — bisa tutup tab, balik lagi kapan aja.")
         if st.button("Reset sesi", use_container_width=True):

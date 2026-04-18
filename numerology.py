@@ -139,8 +139,100 @@ YEAR_THEMES = {
     33: "Master year — service ke komunitas / misi lebih besar",
 }
 
+MONTH_THEMES = {
+    1: "Bulan inisiatif & awal baru — cocok buat mulai proyek / kebiasaan",
+    2: "Bulan sabar & hubungan — perlahan, pertimbangkan feedback orang",
+    3: "Bulan ekspresi & sosial — lagi cerah buat berkarya dan networking",
+    4: "Bulan disiplin & bangun fondasi — fokus ke sistem & rutinitas",
+    5: "Bulan perubahan & fleksibel — siap-siap shift, jangan kaku",
+    6: "Bulan rumah & tanggung jawab — fokus ke orang terdekat & komitmen",
+    7: "Bulan refleksi & belajar — tarik diri, deep thinking, studi",
+    8: "Bulan power & pencapaian — momen ambil keputusan besar, uang/karir",
+    9: "Bulan penutupan — selesaiin yang pending, release yang ga relevan",
+    11: "Master month — intuisi kuat, bisa jadi inspirasi buat orang",
+    22: "Master month — action skala besar, building jangka panjang",
+    33: "Master month — service, pengabdian, care buat komunitas",
+}
 
-def build_profile(full_name: str, dob: date, today: date | None = None) -> dict:
+KARMIC_DEBTS = {13, 14, 16, 19}
+KARMIC_DEBT_MEANINGS = {
+    13: "kerja keras & disiplin berat — gampang ngerasa males atau stuck, tapi harus push terus buat manifest",
+    14: "belajar batesin kebebasan & komitmen — bahaya kecanduan / lepas kendali kalau ga dijaga",
+    16: "ego & kesombongan bakal diruntuhin — butuh ketenangan, relasi toxic bakal hancur sendiri",
+    19: "belajar mandiri tanpa merugikan orang lain — balance independence dan empati",
+}
+
+LESSON_MEANINGS = {
+    1: "belajar berdiri sendiri & ambil pimpinan — kadang terlalu nurut / nunggu orang mulai duluan",
+    2: "belajar kerjasama & diplomasi — kadang terlalu egois / ga sabar sama tempo orang lain",
+    3: "belajar ekspresi diri & joy — kadang terlalu serius / kaku buat self-expression",
+    4: "belajar disiplin & struktur — kadang berantakan, susah fokus ke detail",
+    5: "belajar adaptif & embrace change — kadang kaku / takut sama hal baru",
+    6: "belajar tanggung jawab pada keluarga & orang lain — kadang cenderung avoidance",
+    7: "belajar inner work & kepercayaan — kadang terlalu permukaan, butuh ruang sendiri",
+    8: "belajar kelola power & uang — kadang menghindar dari ambisi / urusan material",
+    9: "belajar kasih sayang universal — kadang terlalu personal / sulit lepas",
+}
+
+
+def _detect_karmic_debt(raw_sum: int) -> int | None:
+    n = raw_sum
+    while n > 9 and n not in MASTER_NUMBERS:
+        if n in KARMIC_DEBTS:
+            return n
+        n = sum(int(d) for d in str(n))
+    return None
+
+
+def life_path_karmic(dob: date) -> int | None:
+    m = reduce_number(dob.month)
+    d = reduce_number(dob.day)
+    y = reduce_number(digit_sum(dob.year))
+    return _detect_karmic_debt(m + d + y)
+
+
+def expression_karmic(name: str) -> int | None:
+    total = sum(PYTHAGOREAN[ch] for ch in name.upper() if ch in PYTHAGOREAN)
+    return _detect_karmic_debt(total)
+
+
+def soul_urge_karmic(name: str) -> int | None:
+    total = sum(PYTHAGOREAN[ch] for ch in name.upper() if ch in VOWELS)
+    return _detect_karmic_debt(total)
+
+
+def personality_karmic(name: str) -> int | None:
+    total = sum(
+        PYTHAGOREAN[ch] for ch in name.upper()
+        if ch in PYTHAGOREAN and ch not in VOWELS
+    )
+    return _detect_karmic_debt(total)
+
+
+def karmic_lessons(name: str) -> list[int]:
+    present = {PYTHAGOREAN[ch] for ch in name.upper() if ch in PYTHAGOREAN}
+    return sorted(set(range(1, 10)) - present)
+
+
+def hidden_passion(name: str) -> list[int]:
+    from collections import Counter
+    counts = Counter(PYTHAGOREAN[ch] for ch in name.upper() if ch in PYTHAGOREAN)
+    if not counts:
+        return []
+    max_count = max(counts.values())
+    return sorted([n for n, c in counts.items() if c == max_count])
+
+
+def maturity_number(life_path_num: int, expression_num: int) -> int:
+    return reduce_number(life_path_num + expression_num)
+
+
+def build_profile(
+    full_name: str,
+    dob: date,
+    today: date | None = None,
+    nickname: str | None = None,
+) -> dict:
     today = today or today_local()
     lp = life_path(dob)
     ex = expression_number(full_name)
@@ -150,8 +242,19 @@ def build_profile(full_name: str, dob: date, today: date | None = None) -> dict:
     py = personal_year(dob, today)
     pm = personal_month(dob, today)
     pd = personal_day(dob, today)
+    debts = {
+        "life_path": life_path_karmic(dob),
+        "expression": expression_karmic(full_name),
+        "soul_urge": soul_urge_karmic(full_name),
+        "personality": personality_karmic(full_name),
+    }
+    lessons = karmic_lessons(full_name)
+    passion = hidden_passion(full_name)
+    maturity = maturity_number(lp, ex)
+    nick = (nickname or "").strip() or full_name.strip().split()[0]
     return {
         "full_name": full_name,
+        "nickname": nick,
         "dob": dob.isoformat(),
         "today": today.isoformat(),
         "life_path": lp,
@@ -162,6 +265,10 @@ def build_profile(full_name: str, dob: date, today: date | None = None) -> dict:
         "personal_year": py,
         "personal_month": pm,
         "personal_day": pd,
+        "karmic_debts": debts,
+        "karmic_lessons": lessons,
+        "hidden_passion": passion,
+        "maturity": maturity,
         "meanings": {
             "life_path": MEANINGS[lp],
             "expression": MEANINGS[ex],
@@ -169,6 +276,8 @@ def build_profile(full_name: str, dob: date, today: date | None = None) -> dict:
             "personality": MEANINGS[pe],
             "birthday": MEANINGS[bd],
             "personal_year": YEAR_THEMES[py],
+            "personal_month": MONTH_THEMES[pm],
             "personal_day": DAILY_VIBES[pd],
+            "maturity": MEANINGS[maturity],
         },
     }
