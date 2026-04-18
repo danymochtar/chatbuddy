@@ -16,6 +16,7 @@ from numerology import (
 )
 from zodiac import (
     JAKARTA_COORDS,
+    MBTI_TYPES,
     SIGN_TRAITS,
     chinese_zodiac,
     compute_chart,
@@ -85,7 +86,21 @@ TEXTS = {
     "nav_zodiak": {"id": "Zodiak", "en": "Zodiac"},
     "nav_shio": {"id": "Shio", "en": "Chinese Zodiac"},
     "nav_weton": {"id": "Horoskop Jawa", "en": "Javanese Horoscope"},
+    "nav_mbti": {"id": "MBTI", "en": "MBTI"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
+    "mbti_header": {"id": "🧠 MBTI Lo", "en": "🧠 Your MBTI"},
+    "mbti_intro": {
+        "id": "MBTI ga bisa dihitung dari tanggal lahir — perlu ngerasain diri sendiri. Pilih tipe lo kalo udah tau, atau tes dulu lewat link di bawah.",
+        "en": "MBTI can't be calculated from birth date — you need to know it. Pick your type if you already know, or take a quick test via the link below.",
+    },
+    "mbti_select": {"id": "Tipe MBTI lo", "en": "Your MBTI type"},
+    "mbti_unknown": {"id": "Belum tahu / mau tes dulu", "en": "Not sure / want to test first"},
+    "mbti_test_link": {
+        "id": "🔗 Tes gratis 10-15 menit di [16personalities.com](https://www.16personalities.com/) — balik ke sini setelah tau tipe lo.",
+        "en": "🔗 Take the free 10-15 min test at [16personalities.com](https://www.16personalities.com/) — come back here once you know your type.",
+    },
+    "mbti_save": {"id": "Simpan & Analisa →", "en": "Save & Analyze →"},
+    "mbti_edit": {"id": "Ganti tipe", "en": "Change type"},
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
     "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
     "pr_hidup_label": {"id": "PR hidup", "en": "Life challenges"},
@@ -173,6 +188,7 @@ def save_session_to_storage() -> None:
             "cached_pages": st.session_state.get("cached_pages", {}),
             "relationships": st.session_state.get("relationships", []),
             "language": st.session_state.get("language", "id"),
+            "mbti": st.session_state.get("mbti"),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data))
     except Exception:
@@ -197,6 +213,7 @@ def load_session_from_storage() -> bool:
         st.session_state.cached_pages = data.get("cached_pages", {})
         st.session_state.relationships = data.get("relationships", [])
         st.session_state.language = data.get("language", "id")
+        st.session_state.mbti = data.get("mbti")
 
         # Backfill fields added after older sessions were first saved.
         profile = st.session_state.profile
@@ -432,6 +449,17 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
                 f"({CHALLENGE_MEANINGS.get(c['number'], '')})"
             )
 
+    mbti = st.session_state.get("mbti")
+    if mbti:
+        lines += [
+            "",
+            "-- Tipe kepribadian (MBTI — user udah share tipe ini) --",
+            f"MBTI: {mbti} — {MBTI_TYPES.get(mbti, '')}",
+            "Istilah MBTI boleh disebut santai (pake tipe kayak INTJ/ENFP langsung) kalo "
+            "user lagi ngobrol soal kepribadian atau buka menu MBTI. Di page karakter "
+            "lain, blend halus sebagai observasi.",
+        ]
+
     if zodiac and zodiac.get("sun"):
         lines += [
             "",
@@ -665,6 +693,71 @@ def weton_prompt(zodiac: dict) -> str:
         "nasehat leluhur yg hangat, bukan mistis/serem.\n\n"
         "Style: casual tapi sedikit rasa Jawa (boleh sesekali pake kata Jawa kayak "
         "'laku', 'urip', 'sangkan paraning dumadi' kalo pas). 'Lo/gw' OK."
+    )
+
+
+def mbti_prompt(mbti: str) -> str:
+    return (
+        f"User udah share MBTI-nya: **{mbti}** ({MBTI_TYPES.get(mbti, '')}).\n\n"
+        "**DI PAGE INI lo BOLEH sebut tipe MBTI terbuka** dan istilah-istilahnya "
+        "(cognitive functions, I/E, S/N, T/F, J/P). Pake heading ##:\n\n"
+        f"## 🧠 {mbti} — Siapa Lo di Lensa MBTI\n"
+        "2 paragraf tentang karakter core tipe ini — kekuatan, cara mikir, cara "
+        "berinteraksi dengan dunia. Pake bahasa yg ngena, bukan textbook.\n\n"
+        "## 🎭 MBTI × Karakter Lo\n"
+        "INI YANG PALING PENTING: **blend MBTI lo sama misi hidup + bakat bawaan + "
+        "panggilan hati + aura luar + talenta lahir** (dari data lo di system "
+        "prompt). Tunjukin dimana MBTI dan angka-angka lo saling **confirm** "
+        "(harmoni) dan dimana mereka bisa kontras / ngasih dimensi tambahan. "
+        "Misalnya kalo ada kontras: 'di MBTI lo intuitif, tapi di numerologi lo "
+        "cenderung praktis — berarti lo tipe yg overthink tapi harus ground-down'. "
+        "2-3 paragraf.\n\n"
+        "## 💼 Karir & Lingkungan Kerja\n"
+        "Yang cocok buat tipe lo + karakter bawaan lo. 2-3 poin bullet actionable.\n\n"
+        "## 💬 Cara Komunikasi\n"
+        "Gimana lo natural-nya ngomong, apa yg bikin lo capek dari interaksi, apa "
+        "yg nge-charge lo. 1-2 paragraf.\n\n"
+        "## 🌱 Growth Area\n"
+        "2-3 pelajaran buat lo — area yg bisa lo kuasain untuk grow.\n\n"
+        "Style: casual 'lo/gw', hangat, sedikit humor."
+    )
+
+
+def render_mbti_page(profile: dict, zodiac: dict | None) -> None:
+    st.header(t("mbti_header"))
+
+    current_mbti = st.session_state.get("mbti")
+    if not current_mbti:
+        st.info(t("mbti_intro"))
+        with st.form("mbti_form"):
+            mbti_options = ["—"] + list(MBTI_TYPES.keys())
+            picked = st.selectbox(
+                t("mbti_select"),
+                mbti_options,
+                format_func=lambda x: (
+                    t("mbti_unknown") if x == "—"
+                    else f"{x} — {MBTI_TYPES[x].split(' — ')[0]}"
+                ),
+            )
+            st.caption(t("mbti_test_link"))
+            save = st.form_submit_button(t("mbti_save"), use_container_width=True)
+        if save and picked != "—":
+            st.session_state.mbti = picked
+            st.session_state.cached_pages.pop("mbti", None)
+            save_session_to_storage()
+            st.rerun()
+        return
+
+    st.markdown(f"**{current_mbti}** — _{MBTI_TYPES[current_mbti]}_")
+    if st.button(t("mbti_edit"), key="edit_mbti"):
+        st.session_state.mbti = None
+        st.session_state.cached_pages.pop("mbti", None)
+        save_session_to_storage()
+        st.rerun()
+
+    st.divider()
+    render_cached_text_page(
+        "mbti", lambda: mbti_prompt(current_mbti), profile, zodiac,
     )
 
 
@@ -952,6 +1045,8 @@ if "relationships" not in st.session_state:
     st.session_state.relationships = []
 if "current_page" not in st.session_state:
     st.session_state.current_page = "chat"
+if "mbti" not in st.session_state:
+    st.session_state.mbti = None
 
 if "storage_loaded" not in st.session_state:
     if st.session_state.profile is None:
@@ -1071,6 +1166,7 @@ else:
             ("🔍", t("nav_inner"), "inner"),
             ("🎓", t("nav_karmic"), "karmic"),
             ("🎯", t("nav_fase"), "fase"),
+            ("🧠", t("nav_mbti"), "mbti"),
             ("💑", t("nav_relationship"), "relationship"),
             ("🗓️", t("nav_arah"), "arah"),
             ("♈", t("nav_zodiak"), "zodiak"),
@@ -1095,7 +1191,7 @@ else:
             clear_session_storage()
             for key in [
                 "profile", "zodiac", "messages", "opening_generated",
-                "cached_pages", "relationships", "current_page",
+                "cached_pages", "relationships", "current_page", "mbti",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
@@ -1150,6 +1246,9 @@ else:
         render_cached_text_page(
             "weton", lambda: weton_prompt(zodiac or {}), profile, zodiac,
         )
+
+    elif page == "mbti":
+        render_mbti_page(profile, zodiac)
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
