@@ -102,6 +102,118 @@ INDONESIA_CITIES = {
 JAKARTA_COORDS = (-6.2088, 106.8456)
 
 
+SHIO_ANIMALS = [
+    "Tikus", "Kerbau", "Macan", "Kelinci", "Naga", "Ular",
+    "Kuda", "Kambing", "Monyet", "Ayam", "Anjing", "Babi",
+]
+
+SHIO_TRAITS = {
+    "Tikus": "cerdas, cepat, oportunis, sosial",
+    "Kerbau": "sabar, pekerja keras, bisa diandalkan, keras kepala",
+    "Macan": "pemberani, pemimpin alami, kompetitif, rebellious",
+    "Kelinci": "lembut, diplomatis, peka, butuh harmoni",
+    "Naga": "karismatik, ambisius, penuh energi, dominan",
+    "Ular": "bijak, intuitif, tenang, misterius",
+    "Kuda": "bebas, energik, pencinta petualangan, impulsif",
+    "Kambing": "artistik, empatik, sensitif, kadang ragu-ragu",
+    "Monyet": "cerdik, inovatif, kreatif, gemar bersosialisasi",
+    "Ayam": "teratur, jujur, detail, bangga akan penampilan",
+    "Anjing": "loyal, protektif, jujur, kadang cemas",
+    "Babi": "tulus, murah hati, cinta kenyamanan, naif",
+}
+
+ELEMENT_CYCLE = {
+    0: "Logam", 1: "Logam",
+    2: "Air", 3: "Air",
+    4: "Kayu", 5: "Kayu",
+    6: "Api", 7: "Api",
+    8: "Tanah", 9: "Tanah",
+}
+
+ELEMENT_TRAITS = {
+    "Logam": "disiplin, tegas, fokus pada pencapaian",
+    "Air": "adaptif, intuitif, mengalir dengan situasi",
+    "Kayu": "tumbuh, idealis, mencari ekspresi",
+    "Api": "pasionat, kreatif, berani mengambil risiko",
+    "Tanah": "stabil, praktis, bisa dipercaya",
+}
+
+
+def chinese_zodiac(dob: date) -> dict:
+    year = dob.year
+    if dob.month == 1 or (dob.month == 2 and dob.day < 5):
+        year -= 1
+    animal = SHIO_ANIMALS[(year - 1900) % 12]
+    element = ELEMENT_CYCLE[year % 10]
+    return {
+        "animal": animal,
+        "element": element,
+        "animal_traits": SHIO_TRAITS[animal],
+        "element_traits": ELEMENT_TRAITS[element],
+        "label": f"{element} {animal}",
+    }
+
+
+DINA = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+DINA_NEPTU = {"Minggu": 5, "Senin": 4, "Selasa": 3, "Rabu": 7, "Kamis": 8, "Jumat": 6, "Sabtu": 9}
+
+PASARAN = ["Legi", "Pahing", "Pon", "Wage", "Kliwon"]
+PASARAN_NEPTU = {"Legi": 5, "Pahing": 9, "Pon": 7, "Wage": 4, "Kliwon": 8}
+
+DINA_TRAITS = {
+    "Senin": "lembut, tenang, sabar, mudah bergaul",
+    "Selasa": "penuh semangat, tegas, ambisius",
+    "Rabu": "pandai komunikasi, analitis, cepat tanggap",
+    "Kamis": "bijaksana, dewasa, berjiwa pemimpin",
+    "Jumat": "sabar, penuh kasih, spiritual",
+    "Sabtu": "mandiri, pekerja keras, disiplin",
+    "Minggu": "kreatif, optimis, ceria",
+}
+
+PASARAN_TRAITS = {
+    "Legi": "manis, lembut, disukai banyak orang",
+    "Pahing": "tegas, keras kemauan, pantang menyerah",
+    "Pon": "cerdas, banyak bicara, mudah bergaul",
+    "Wage": "sederhana, jujur, kerja keras",
+    "Kliwon": "misterius, kuat spiritual, penuh intuisi",
+}
+
+NEPTU_RANGE_MEANINGS = {
+    "rendah": "karakter lembut & sabar (neptu 7-11)",
+    "sedang": "karakter seimbang, fleksibel (neptu 12-14)",
+    "tinggi": "karakter kuat, berkarisma (neptu 15-17)",
+    "sangat_tinggi": "karakter dominan, ambisius (neptu 18+)",
+}
+
+
+def weton(dob: date) -> dict:
+    # Reference: Jan 1 2000 = Sabtu Pahing (Saturday Pahing, pasaran index 1)
+    ref = date(2000, 1, 1)
+    days = (dob - ref).days
+    pasaran_idx = (1 + days) % 5
+    pasaran_name = PASARAN[pasaran_idx]
+    dina_name = DINA[dob.weekday()]
+    neptu = DINA_NEPTU[dina_name] + PASARAN_NEPTU[pasaran_name]
+    if neptu <= 11:
+        neptu_range = "rendah"
+    elif neptu <= 14:
+        neptu_range = "sedang"
+    elif neptu <= 17:
+        neptu_range = "tinggi"
+    else:
+        neptu_range = "sangat_tinggi"
+    return {
+        "dina": dina_name,
+        "pasaran": pasaran_name,
+        "weton": f"{dina_name} {pasaran_name}",
+        "neptu": neptu,
+        "neptu_range": neptu_range,
+        "dina_traits": DINA_TRAITS[dina_name],
+        "pasaran_traits": PASARAN_TRAITS[pasaran_name],
+        "neptu_meaning": NEPTU_RANGE_MEANINGS[neptu_range],
+    }
+
+
 def geocode_city(city_name: str) -> Optional[tuple[float, float]]:
     key = city_name.strip().lower().split(",")[0].strip()
     if key in INDONESIA_CITIES:

@@ -14,7 +14,15 @@ from numerology import (
     build_profile,
     today_local,
 )
-from zodiac import JAKARTA_COORDS, SIGN_TRAITS, compute_chart, geocode_city, sun_sign
+from zodiac import (
+    JAKARTA_COORDS,
+    SIGN_TRAITS,
+    chinese_zodiac,
+    compute_chart,
+    geocode_city,
+    sun_sign,
+    weton,
+)
 
 MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 3000
@@ -74,6 +82,9 @@ TEXTS = {
     "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
     "nav_arah": {"id": "Arah Bulan & Tahun", "en": "Month & Year Guide"},
     "nav_fase": {"id": "Fase Hidup", "en": "Life Phases"},
+    "nav_zodiak": {"id": "Zodiak", "en": "Zodiac"},
+    "nav_shio": {"id": "Shio", "en": "Chinese Zodiac"},
+    "nav_weton": {"id": "Horoskop Jawa", "en": "Javanese Horoscope"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
     "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
@@ -515,6 +526,98 @@ def arah_prompt() -> str:
     )
 
 
+def zodiak_prompt(zodiac: dict | None) -> str:
+    if not zodiac or not zodiac.get("sun"):
+        return (
+            "User ga kasih data cukup buat baca astrologi barat. Kasih tau dgn hangat "
+            "bahwa buat baca zodiak lengkap (sun, moon, rising), perlu nama lengkap, "
+            "tanggal lahir, jam lahir, dan kota lahir. User bisa reset sesi kalo mau isi "
+            "ulang. Di section ini CUMA page ini lo BOLEH sebut istilah astrologi "
+            "terbuka — karena user udah opt-in dengan buka menu zodiak."
+        )
+    lines = [f"Sun: {zodiac['sun']}"]
+    if zodiac.get("moon"):
+        lines.append(f"Moon: {zodiac['moon']}")
+    if zodiac.get("rising"):
+        lines.append(f"Rising/Ascendant: {zodiac['rising']}")
+    chart_data = "\n".join(lines)
+    return (
+        f"**DI PAGE INI SAJA lo BOLEH sebut istilah astrologi barat terbuka** (Sun, "
+        f"Moon, Rising, nama rasi) — user udah opt-in dengan buka menu Zodiak. Di "
+        f"page lain tetep invisible.\n\n"
+        f"Data astrologi user:\n{chart_data}\n\n"
+        "Bikin analisa zodiak yang hangat & personal, pake heading ##:\n\n"
+        "## ☀️ Sun Sign Lo\n"
+        "Jelasin Sun sign lo — karakter ego, cara tampil ke dunia, core identity. "
+        "2 paragraf.\n\n"
+        "## 🌙 Moon Sign Lo (kalo ada)\n"
+        "Kalo Moon ada: emosi dalem, kebutuhan batin, comfort zone emosional. Kalo "
+        "ga ada: skip section ini, kasih note kecil bahwa butuh jam lahir buat "
+        "Moon sign.\n\n"
+        "## 🌅 Rising Sign Lo (kalo ada)\n"
+        "Kalo Rising ada: first impression, vibe yang orang liat pertama kali dari "
+        "lo. Kalo ga ada: skip, note butuh jam + kota lahir.\n\n"
+        "## 💫 Blend Jadi Satu\n"
+        "Gimana semua lapisan ini bareng-bareng bentuk persona astrologi lo yang "
+        "unik. 1-2 paragraf.\n\n"
+        "Style: pake 'lo/gw', hangat, storytelling bukan list kering."
+    )
+
+
+def shio_prompt(zodiac: dict) -> str:
+    shio = zodiac.get("shio") or {}
+    return (
+        f"**DI PAGE INI SAJA lo BOLEH sebut istilah shio / Chinese zodiac terbuka** — "
+        f"user udah opt-in. Di page lain tetep invisible.\n\n"
+        f"Data shio user:\n"
+        f"- Elemen: {shio.get('element')} — {shio.get('element_traits')}\n"
+        f"- Hewan shio: {shio.get('animal')} — {shio.get('animal_traits')}\n"
+        f"- Gabungan: **{shio.get('label')}**\n\n"
+        "Bikin analisa shio yang hangat & personal, pake heading ##:\n\n"
+        "## 🐾 Shio Lo\n"
+        "Kenalin shio lo dan karakter hewan nya. 2 paragraf tentang karakter "
+        "hewan ini — kekuatan, pola perilaku, sifat khasnya.\n\n"
+        "## ☯️ Elemen Lo\n"
+        "Jelasin elemen lo (Kayu/Api/Tanah/Logam/Air) dan gimana elemen ini warna-in "
+        "shio lo. 1-2 paragraf.\n\n"
+        "## 🎯 Blend Shio × Elemen\n"
+        "Gimana shio + elemen jadi karakter unik lo. Apa kekuatan natural dari "
+        "kombinasi ini, apa tendency yg harus diwaspadain.\n\n"
+        "## 💡 Tips Buat Lo\n"
+        "2-3 tips praktis yang nyambung sama karakter shio + elemen lo.\n\n"
+        "Style: casual 'lo/gw', storytelling."
+    )
+
+
+def weton_prompt(zodiac: dict) -> str:
+    w = zodiac.get("weton") or {}
+    return (
+        f"**DI PAGE INI SAJA lo BOLEH bahas weton / horoskop Jawa terbuka** — user "
+        f"udah opt-in. Di page lain tetep invisible.\n\n"
+        f"Data weton user:\n"
+        f"- Dina (hari lahir): {w.get('dina')} — {w.get('dina_traits')}\n"
+        f"- Pasaran: {w.get('pasaran')} — {w.get('pasaran_traits')}\n"
+        f"- Weton lengkap: **{w.get('weton')}**\n"
+        f"- Neptu (total): {w.get('neptu')} — {w.get('neptu_meaning')}\n\n"
+        "Bikin analisa weton yang hangat, sedikit filosofis ala Jawa, pake heading ##:\n\n"
+        "## 🌿 Weton Lo\n"
+        "Kenalin weton (hari + pasaran) dan apa artinya dalam tradisi Jawa. 1 "
+        "paragraf intro singkat.\n\n"
+        "## ☀️ Dina Lo\n"
+        "Karakter dari hari lahir lo. 1-2 paragraf.\n\n"
+        "## 🌙 Pasaran Lo\n"
+        "Karakter dari pasaran lo (siklus 5-harian Jawa). 1-2 paragraf.\n\n"
+        "## 🔢 Neptu Lo\n"
+        "Jelasin neptu (total nilai dina + pasaran) dan apa artinya buat kekuatan "
+        "aura lo. 1 paragraf.\n\n"
+        "## 💫 Kearifan Buat Lo\n"
+        "2-3 insight / wewaler / tuntunan yg relate sama weton lo. Nada-nya "
+        "nasehat leluhur yg hangat, bukan mistis/serem.\n\n"
+        "Style: casual tapi sedikit rasa Jawa (boleh sesekali pake kata Jawa kayak "
+        "'laku', 'urip', 'sangkan paraning dumadi' kalo pas). 'Lo/gw' OK."
+    )
+
+
 def relationship_prompt(partner_profile: dict) -> str:
     nick = partner_profile.get("nickname") or partner_profile["full_name"].split()[0]
     p_lines = [
@@ -738,6 +841,8 @@ def build_full_profile(
         "rising": None,
         "birth_time": birth_time.strftime("%H:%M") if birth_time else None,
         "birth_city": birth_city,
+        "shio": chinese_zodiac(dob),
+        "weton": weton(dob),
     }
     if birth_time:
         lat, lon = JAKARTA_COORDS
@@ -876,6 +981,9 @@ else:
             ("🎓", t("nav_karmic"), "karmic"),
             ("🎯", t("nav_fase"), "fase"),
             ("🗓️", t("nav_arah"), "arah"),
+            ("♈", t("nav_zodiak"), "zodiak"),
+            ("🐉", t("nav_shio"), "shio"),
+            ("🌿", t("nav_weton"), "weton"),
             ("💑", t("nav_relationship"), "relationship"),
         ]
         for emoji, label, key in nav_items:
@@ -978,6 +1086,21 @@ else:
 
     elif page == "fase":
         render_cached_text_page("fase", fase_prompt, profile, zodiac)
+
+    elif page == "zodiak":
+        render_cached_text_page(
+            "zodiak", lambda: zodiak_prompt(zodiac), profile, zodiac,
+        )
+
+    elif page == "shio":
+        render_cached_text_page(
+            "shio", lambda: shio_prompt(zodiac or {}), profile, zodiac,
+        )
+
+    elif page == "weton":
+        render_cached_text_page(
+            "weton", lambda: weton_prompt(zodiac or {}), profile, zodiac,
+        )
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
