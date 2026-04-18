@@ -116,6 +116,7 @@ TEXTS = {
         "id": "💾 Sesi tersimpen di browser lo.",
         "en": "💾 Session is saved in your browser.",
     },
+    "born_word": {"id": "lahir", "en": "born"},
     "misi_hidup": {"id": "Misi Hidup", "en": "Life Mission"},
     "bakat_bawaan": {"id": "Bakat Bawaan", "en": "Natural Talent"},
     "panggilan_hati": {"id": "Panggilan Hati", "en": "Heart's Calling"},
@@ -950,7 +951,18 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
                 save_session_to_storage()
                 st.rerun()
             st.caption(f"{rel['partner_name']} · lahir {rel['partner_dob']}")
-            st.markdown(rel["analysis"])
+            if rel.get("analysis"):
+                st.markdown(rel["analysis"])
+            else:
+                placeholder = st.empty()
+                new_analysis = stream_assistant(
+                    messages_for_api=[{"role": "user", "content": relationship_prompt(rel["partner_profile"])}],
+                    system=system_prompt(profile, zodiac, today_local()),
+                    placeholder=placeholder,
+                )
+                rel["analysis"] = new_analysis
+                st.session_state.relationships = rels
+                save_session_to_storage()
 
 
 def handle_chat_turn(profile: dict, zodiac: dict | None) -> None:
@@ -1011,16 +1023,20 @@ _lang_cols = st.columns([3, 1])
 with _lang_cols[1]:
     _lang_choice = st.segmented_control(
         "language",
-        options=["🇮🇩 ID", "🇺🇸 EN"],
-        default="🇮🇩 ID" if st.session_state.language == "id" else "🇺🇸 EN",
+        options=["🇺🇸", "🇮🇩"],
+        default="🇺🇸" if st.session_state.language == "en" else "🇮🇩",
         label_visibility="collapsed",
         key="_lang_toggle",
     )
     if _lang_choice:
-        _new_lang = "id" if "ID" in _lang_choice else "en"
+        _new_lang = "en" if _lang_choice == "🇺🇸" else "id"
         if _new_lang != st.session_state.language:
             st.session_state.language = _new_lang
             st.session_state.cached_pages = {}
+            st.session_state.opening_generated = False
+            st.session_state.messages = []
+            for _rel in st.session_state.get("relationships", []):
+                _rel["analysis"] = ""
             if st.session_state.get("profile"):
                 try:
                     save_session_to_storage()
@@ -1115,7 +1131,7 @@ else:
     with st.sidebar:
         nick_display = profile.get("nickname") or profile["full_name"].split()[0]
         st.markdown(f"### 👋 Hi, **{nick_display}**")
-        st.caption(f"_{profile['full_name']} · lahir {profile['dob']}_")
+        st.caption(f"_{profile['full_name']} · {t('born_word')} {profile['dob']}_")
 
         with st.expander(t("angka_utama")):
             for label_key, key in [
