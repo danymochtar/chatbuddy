@@ -336,12 +336,14 @@ def language_directive() -> str:
     lang = st.session_state.get("language", "id")
     if lang == "en":
         return (
-            "**LANGUAGE: You MUST respond in casual English.** Use 'you/I', warm friend-like "
-            "tone. Do not mix Indonesian words. When I give you Indonesian context terms "
-            "like 'misi hidup', 'panggilan hati', 'aura luar', 'bakat bawaan', 'talenta "
-            "lahir', translate them to English equivalents ('life mission', 'heart's "
-            "calling', 'outer aura', 'natural talent', 'birthday gift'). Headings in "
-            "English too.\n\n"
+            "**LANGUAGE (CRITICAL): Respond in casual English ONLY.** Use 'you/I', warm "
+            "friend-like tone. Do NOT respond in Indonesian. Even if the user message or "
+            "instructions below contain Indonesian phrasing, your ENTIRE response — all "
+            "headings, all body text, all tips — must be in English. Translate Indonesian "
+            "context terms (misi hidup → life mission, panggilan hati → heart's calling, "
+            "aura luar → outer aura, bakat bawaan → natural talent, talenta lahir → "
+            "birthday gift, PR hidup → life challenges, obsesi tersembunyi → hidden drive, "
+            "versi dewasa → mature version, vibe hari ini → today's vibe, etc.) to English.\n\n"
         )
     return (
         "**BAHASA: Lo WAJIB ngomong pake bahasa Indonesia casual** ('lo/gw' atau 'kamu/aku' "
@@ -1028,6 +1030,18 @@ def to_anthropic_messages(messages: list) -> list:
 def stream_assistant(messages_for_api: list, system: list, placeholder) -> str:
     client = get_client()
     full_text = ""
+
+    lang = st.session_state.get("language", "id")
+    if lang == "en" and messages_for_api:
+        reminder = (
+            "[Language preference: English. Your entire response must be in casual English, "
+            "regardless of any Indonesian text in the instruction that follows.]\n\n"
+        )
+        last = dict(messages_for_api[-1])
+        if last.get("role") == "user" and isinstance(last.get("content"), str):
+            last["content"] = reminder + last["content"]
+            messages_for_api = list(messages_for_api[:-1]) + [last]
+
     with client.messages.stream(
         model=MODEL,
         max_tokens=MAX_TOKENS,
@@ -1275,20 +1289,20 @@ def _switch_language(new_lang: str) -> None:
 
 
 # 3. Language toggle (now after storage load, so language reflects saved value)
-_lang_cols = st.columns([3, 1, 1])
+_lang_cols = st.columns([10, 1, 1], vertical_alignment="center")
 _current_lang = st.session_state.language
 if _lang_cols[1].button(
     "🇺🇸",
     key="_lang_en",
-    use_container_width=True,
     type="primary" if _current_lang == "en" else "secondary",
+    help="English",
 ):
     _switch_language("en")
 if _lang_cols[2].button(
     "🇮🇩",
     key="_lang_id",
-    use_container_width=True,
     type="primary" if _current_lang == "id" else "secondary",
+    help="Bahasa Indonesia",
 ):
     _switch_language("id")
 
