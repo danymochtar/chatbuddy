@@ -762,7 +762,7 @@ def render_mbti_page(profile: dict, zodiac: dict | None) -> None:
     )
 
 
-def relationship_prompt(partner_profile: dict) -> str:
+def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") -> str:
     nick = partner_profile.get("nickname") or partner_profile["full_name"].split()[0]
     p_lines = [
         f"Nama: {partner_profile['full_name']} (panggil: {nick})",
@@ -774,8 +774,31 @@ def relationship_prompt(partner_profile: dict) -> str:
         f"Talenta lahir: {partner_profile['birthday']} ({ARCHETYPES[partner_profile['birthday']]}) — {partner_profile['meanings']['birthday']}",
     ]
     partner_block = "\n".join(p_lines)
+
+    intimate_keys = {"pasangan", "partner", "gebetan", "crush"}
+    include_intimate = relation_type.lower() in intimate_keys
+
+    intimate_section = ""
+    if include_intimate:
+        intimate_section = (
+            "\n## 🔥 Intimate Chemistry\n"
+            "Analisa kecocokan intim yg **matang, tasteful, dan jujur** — bukan vulgar, bukan "
+            "kaku. Cover:\n"
+            "- Kebutuhan masing-masing di ranjang (tebak dari karakter: misal slow-sensual "
+            "vs fiery-spontan, emotional-connection vs physical-pleasure, butuh rutinitas vs "
+            "butuh variasi)\n"
+            "- Dinamika chemistry: dimana klop, dimana potensi friksi (contoh: satu butuh "
+            "emotional warm-up, satu lebih direct; satu romantic planner, satu spontan)\n"
+            "- Impact aura luar & panggilan hati ke gaya intim\n"
+            "- 2-3 tips praktis buat bikin connection lebih dalem (komunikasi, foreplay "
+            "emosional, ritual berdua, dll)\n\n"
+            "Tone: dewasa, terbuka, saling respect. Hindari stereotype gender / sexist "
+            "framing. Kalo data terbatas, ya bilang 'secara karakter ini kemungkinan...' "
+            "daripada ngasih klaim yg pasti.\n"
+        )
+
     return (
-        f"Gw mau tau gimana dinamika gw sama orang ini:\n\n{partner_block}\n\n"
+        f"Gw mau tau gimana dinamika gw sama orang ini (tipe hubungan: **{relation_type}**):\n\n{partner_block}\n\n"
         "Pake konteks energi hari ini, vibe bulan ini, dan tema tahun ini gw juga (udah "
         "ada di system prompt) saat kasih insight timing.\n\n"
         "Bikinin analisa compatibility yg blend karakter gw vs karakter dia. Pake heading ##:\n\n"
@@ -786,8 +809,9 @@ def relationship_prompt(partner_profile: dict) -> str:
         "Gimana lo dua sebaiknya ngomong. Tone lo kyk apa, tone dia kyk apa, gimana "
         "ketemuin tengahnya.\n\n"
         "## 🌱 Growth Together\n"
-        "2-3 tips actionable buat hubungan ini tumbuh. Waspadain vs hargain.\n\n"
-        "## 🌞 Vibe Buat Hari Ini\n"
+        "2-3 tips actionable buat hubungan ini tumbuh. Waspadain vs hargain.\n"
+        + intimate_section +
+        "\n## 🌞 Vibe Buat Hari Ini\n"
         "1-2 tips konkret buat hari ini berdasarkan energi hari ini lo (dari system prompt) — "
         "apa yg cocok lo dua lakuin bareng hari ini, apa yg bijak dihindari hari ini.\n\n"
         "## 🗓️ Vibe Bulan & Tahun Ini\n"
@@ -917,7 +941,7 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
                 with st.spinner(t("rel_loading")):
                     placeholder = st.empty()
                     analysis = stream_assistant(
-                        messages_for_api=[{"role": "user", "content": relationship_prompt(partner)}],
+                        messages_for_api=[{"role": "user", "content": relationship_prompt(partner, p_relation)}],
                         system=system_prompt(profile, zodiac, today_local()),
                         placeholder=placeholder,
                     )
@@ -956,7 +980,9 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
             else:
                 placeholder = st.empty()
                 new_analysis = stream_assistant(
-                    messages_for_api=[{"role": "user", "content": relationship_prompt(rel["partner_profile"])}],
+                    messages_for_api=[{"role": "user", "content": relationship_prompt(
+                        rel["partner_profile"], rel.get("relation_type", "pasangan"),
+                    )}],
                     system=system_prompt(profile, zodiac, today_local()),
                     placeholder=placeholder,
                 )
