@@ -258,8 +258,8 @@ def load_session_from_storage() -> bool:
 
         # Refresh daily/monthly/yearly numbers if the saved 'today' is stale
         # (user opened the app yesterday, comes back today → personal_day
-        # changed, maybe personal_month too). Only refresh the profile numbers,
-        # never clear chat history or opening — those are user artifacts.
+        # changed, maybe personal_month too). Only refresh the profile numbers
+        # and mark opening as stale — never clear chat history or cached pages.
         if dob is not None:
             current_today = today_local()
             if profile.get("today") != current_today.isoformat():
@@ -282,9 +282,19 @@ def load_session_from_storage() -> bool:
                     profile["meanings"]["personal_year"] = _YT[profile["personal_year"]]
                     profile["meanings"]["personal_month"] = _MT[profile["personal_month"]]
                     profile["meanings"]["personal_day"] = _DV[profile["personal_day"]]
+                    # Mark opening stale so Beranda regenerates it in place.
+                    st.session_state.opening_generated = False
                     migrated = True
                 except Exception:
                     pass
+
+        # Tag the first message as the opening on sessions saved before the
+        # is_opening flag existed. This lets the day-rollover refresh replace
+        # just that one message instead of appending a duplicate.
+        msgs = st.session_state.messages
+        if msgs and msgs[0].get("role") == "assistant" and "is_opening" not in msgs[0]:
+            msgs[0]["is_opening"] = True
+            migrated = True
 
         if dob is not None:
             if not zodiac.get("shio"):
@@ -1545,7 +1555,17 @@ else:
     page = st.session_state.current_page
 
     if page == "chat":
-        for msg in st.session_state.messages:
+        display_msgs = st.session_state.messages
+        # Hide a stale opening while we're about to regenerate it so the user
+        # doesn't see yesterday's greeting flash before the new one streams in.
+        if (
+            not st.session_state.opening_generated
+            and display_msgs
+            and display_msgs[0].get("is_opening")
+        ):
+            display_msgs = display_msgs[1:]
+
+        for msg in display_msgs:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
 
@@ -1557,7 +1577,17 @@ else:
                     system=system_prompt(profile, zodiac, today_local()),
                     placeholder=placeholder,
                 )
-            st.session_state.messages.append({"role": "assistant", "content": full_text})
+            new_opening = {
+                "role": "assistant",
+                "content": full_text,
+                "is_opening": True,
+            }
+            existing = st.session_state.messages
+            if existing and existing[0].get("is_opening"):
+                existing[0] = new_opening
+            else:
+                existing.insert(0, new_opening)
+            st.session_state.messages = existing
             st.session_state.opening_generated = True
             save_session_to_storage()
             st.rerun()
