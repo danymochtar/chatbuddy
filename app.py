@@ -1365,6 +1365,18 @@ def build_full_profile(
 
 st.set_page_config(page_title="Supernova", page_icon="✨", layout="centered")
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stMarkdownContainer"] h1 { font-size: 1.35rem !important; margin: 0.8rem 0 0.3rem; }
+    [data-testid="stMarkdownContainer"] h2 { font-size: 1.15rem !important; margin: 0.9rem 0 0.3rem; }
+    [data-testid="stMarkdownContainer"] h3 { font-size: 1.05rem !important; margin: 0.7rem 0 0.3rem; }
+    [data-testid="stMarkdownContainer"] blockquote { margin: 0.6rem 0; padding: 0.4rem 0.8rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # 1. Initialize all state defaults before anything renders
 if "language" not in st.session_state:
     st.session_state.language = "id"
