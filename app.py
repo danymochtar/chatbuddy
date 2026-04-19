@@ -1368,7 +1368,7 @@ st.set_page_config(page_title="Supernova", page_icon="✨", layout="centered")
 st.markdown(
     """
     <style>
-    [data-testid="stMarkdownContainer"] h1 { font-size: 1.35rem !important; margin: 0.8rem 0 0.3rem; }
+    [data-testid="stMarkdownContainer"] h1 { font-size: 1.7rem !important; margin: 0.5rem 0 0.2rem; }
     [data-testid="stMarkdownContainer"] h2 { font-size: 1.15rem !important; margin: 0.9rem 0 0.3rem; }
     [data-testid="stMarkdownContainer"] h3 { font-size: 1.05rem !important; margin: 0.7rem 0 0.3rem; }
     [data-testid="stMarkdownContainer"] blockquote { margin: 0.6rem 0; padding: 0.4rem 0.8rem; }
@@ -1429,7 +1429,7 @@ def _switch_language(new_lang: str) -> None:
 
 # 3. (Removed from main area; language toggle now lives in the sidebar.)
 
-st.markdown("### ✨ Supernova")
+st.markdown("# ✨ Supernova")
 st.caption(t("subtitle"))
 
 if st.session_state.profile is None:
