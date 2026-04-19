@@ -9,7 +9,9 @@ from numerology import (
     ARCHETYPES,
     DAILY_VIBES,
     KARMIC_DEBT_MEANINGS,
+    KARMIC_DEBT_SHORT,
     LESSON_MEANINGS,
+    LESSON_SHORT,
     PINNACLE_MEANINGS,
     CHALLENGE_MEANINGS,
     build_profile,
@@ -136,8 +138,8 @@ TEXTS = {
     },
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
     "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
-    "pr_hidup_label": {"id": "PR hidup", "en": "Life challenges"},
-    "pelajaran_label": {"id": "Pelajaran hidup", "en": "Life lessons"},
+    "pr_hidup_label": {"id": "Utang Karmic", "en": "Karmic Debt"},
+    "pelajaran_label": {"id": "Pelajaran Jiwa", "en": "Soul Lessons"},
     "pelajaran_kosong": {
         "id": "lengkap (semua angka ada di nama)",
         "en": "complete (all numbers present in name)",
@@ -1536,17 +1538,18 @@ else:
             if active_debts:
                 st.markdown(f"**{t('pr_hidup_label')}:**")
                 for lbl, val in active_debts:
-                    st.markdown(f"- {lbl}: `{val}`")
+                    short = KARMIC_DEBT_SHORT.get(val, "")
+                    st.markdown(f"- {lbl} (`{val}`) — _{short}_")
             lessons = profile.get("karmic_lessons") or []
             if lessons:
-                st.markdown(
-                    f"**{t('pelajaran_label')}:** {', '.join(str(n) for n in lessons)}"
-                )
+                st.markdown(f"**{t('pelajaran_label')}:**")
+                for n in lessons:
+                    st.markdown(f"- `{n}` — _{LESSON_SHORT.get(n, '')}_")
             else:
                 st.markdown(f"**{t('pelajaran_label')}:** {t('pelajaran_kosong')}")
             passion = profile.get("hidden_passion") or []
             if passion:
-                names = ", ".join(f"`{n}` ({ARCHETYPES[n]})" for n in passion)
+                names = ", ".join(f"`{n}` · {ARCHETYPES[n]}" for n in passion)
                 st.markdown(f"**{t('obsesi_label')}:** {names}")
             maturity = profile.get("maturity")
             if maturity:

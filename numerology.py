@@ -84,18 +84,38 @@ def universal_day(today: date) -> int:
 
 
 ARCHETYPES = {
-    1: "Si Leader",
-    2: "Si Pendamai",
-    3: "Si Kreatif",
-    4: "Si Pekerja",
-    5: "Si Bebas",
-    6: "Si Penyayang",
-    7: "Si Pemikir",
-    8: "Si Ambisius",
-    9: "Si Idealis",
-    11: "Si Visioner",
-    22: "Si Pembangun",
-    33: "Si Guru",
+    1: "Pemimpin",
+    2: "Pendamai",
+    3: "Kreatif",
+    4: "Pekerja",
+    5: "Petualang",
+    6: "Penyayang",
+    7: "Pemikir",
+    8: "Ambisius",
+    9: "Idealis",
+    11: "Visioner",
+    22: "Pembangun",
+    33: "Guru",
+}
+
+# Short label companions for compact display (sidebar, quick reference)
+KARMIC_DEBT_SHORT = {
+    13: "disiplin & kerja keras",
+    14: "kelola kebebasan",
+    16: "lepas ego",
+    19: "balance mandiri & empati",
+}
+
+LESSON_SHORT = {
+    1: "berani ambil pimpinan",
+    2: "belajar kerjasama",
+    3: "ekspresi diri",
+    4: "disiplin & struktur",
+    5: "adaptif ke perubahan",
+    6: "tanggung jawab orang terdekat",
+    7: "inner work & refleksi",
+    8: "kelola power & uang",
+    9: "kasih tanpa pamrih",
 }
 
 
