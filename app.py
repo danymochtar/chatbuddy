@@ -258,7 +258,8 @@ def load_session_from_storage() -> bool:
 
         # Refresh daily/monthly/yearly numbers if the saved 'today' is stale
         # (user opened the app yesterday, comes back today → personal_day
-        # changed, maybe personal_month too).
+        # changed, maybe personal_month too). Only refresh the profile numbers,
+        # never clear chat history or opening — those are user artifacts.
         if dob is not None:
             current_today = today_local()
             if profile.get("today") != current_today.isoformat():
@@ -281,11 +282,6 @@ def load_session_from_storage() -> bool:
                     profile["meanings"]["personal_year"] = _YT[profile["personal_year"]]
                     profile["meanings"]["personal_month"] = _MT[profile["personal_month"]]
                     profile["meanings"]["personal_day"] = _DV[profile["personal_day"]]
-                    # Daily content is stale — regenerate opening + arah + fase
-                    st.session_state.opening_generated = False
-                    st.session_state.messages = []
-                    st.session_state.cached_pages.pop("arah", None)
-                    st.session_state.cached_pages.pop("fase", None)
                     migrated = True
                 except Exception:
                     pass
