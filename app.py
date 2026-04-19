@@ -85,7 +85,7 @@ TEXTS = {
     },
     "nav_chat": {"id": "Beranda", "en": "Home"},
     "nav_karakter": {"id": "Karakter", "en": "Character"},
-    "nav_inner": {"id": "Aspek Dalam", "en": "Inner Aspect"},
+    "nav_inner": {"id": "Sisi Batin", "en": "Inner World"},
     "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
     "nav_arah": {"id": "Arah Bulan & Tahun", "en": "Month & Year Guide"},
     "nav_fase": {"id": "Fase Hidup", "en": "Life Phases"},
@@ -137,7 +137,7 @@ TEXTS = {
         "en": "Please enter your current role 🙏",
     },
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
-    "aspek_detail": {"id": "🔎 Detail aspek dalam", "en": "🔎 Deeper aspects detail"},
+    "aspek_detail": {"id": "🔎 Sisi batin", "en": "🔎 Inner world"},
     "pr_hidup_label": {"id": "Utang Karmic", "en": "Karmic Debt"},
     "pelajaran_label": {"id": "Pelajaran Jiwa", "en": "Soul Lessons"},
     "pelajaran_kosong": {
@@ -396,7 +396,7 @@ def language_directive() -> str:
             "  - `## 💬 Yuk Ngobrol` → `## 💬 Let's Chat`\n"
             "  - `## 💬 Ngobrol Yuk` → `## 💬 Let's Chat`\n"
             "  - `## 👤 Kompleksitas Karakter Lo` → `## 👤 Your Character Depth`\n"
-            "  - `## 🔍 Aspek Dalam Lo` → `## 🔍 Your Inner Aspects`\n"
+            "  - `## 🔍 Sisi Batin Lo` → `## 🔍 Your Inner World`\n"
             "  - `## 🎓 PR Hidup Lo` → `## 🎓 Your Life Lessons`\n"
             "  - `## 🎯 Fase Hidup Lo` → `## 🎯 Your Life Phases`\n"
             "  - `## 🗓️ Bulan Ini` → `## 🗓️ This Month`\n"
@@ -600,6 +600,37 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
             "Di page Karir, analisa lebih dalem."
         )
 
+    rels = st.session_state.get("relationships") or []
+    if rels:
+        lines += ["", "-- Orang-orang deket user (dari menu Relationship) --"]
+        for r in rels:
+            pp = r.get("partner_profile") or {}
+            nick = r.get("partner_nick") or pp.get("nickname", "")
+            rel_type = r.get("relation_type", "")
+            info = f"- **{nick}** ({rel_type}, lahir {r.get('partner_dob')})"
+            if pp:
+                lp = pp.get("life_path")
+                ex = pp.get("expression")
+                su = pp.get("soul_urge")
+                pe = pp.get("personality")
+                traits = []
+                if lp:
+                    traits.append(f"misi {lp} ({ARCHETYPES.get(lp, '')})")
+                if ex:
+                    traits.append(f"bakat {ex} ({ARCHETYPES.get(ex, '')})")
+                if su:
+                    traits.append(f"hati {su} ({ARCHETYPES.get(su, '')})")
+                if pe:
+                    traits.append(f"aura {pe} ({ARCHETYPES.get(pe, '')})")
+                if traits:
+                    info += ": " + ", ".join(traits)
+            lines.append(info)
+        lines.append(
+            "Kalo user nanya soal orang2 ini di chat umum (Beranda atau page lain), "
+            "boleh reference karakter mereka. Blend halus, jangan sebut angka / istilah "
+            "teknis. Analisa mendalam & compat tetep di menu Relationship."
+        )
+
     if zodiac and zodiac.get("sun"):
         lines += [
             "",
@@ -741,7 +772,7 @@ def inner_prompt() -> str:
         "kesusahan / tekanan.\n"
         "4. **Gaya berpikir lo** (rational thought) — cara natural lo memproses informasi "
         "& ambil keputusan mental.\n\n"
-        "Pake heading ## di atas (misal `## 🔍 Aspek Dalam Lo`). 4-5 paragraf storytelling. "
+        "Pake heading ## di atas (misal `## 🔍 Sisi Batin Lo`). 4-5 paragraf storytelling. "
         "Angka dalam kurung saat nyebut trait. **Zero istilah teknis** ('hidden passion', "
         "'maturity number', 'balance number', 'rational thought' dll JANGAN disebut)."
     )
