@@ -206,6 +206,36 @@ NEPTU_RANGE_MEANINGS = {
 }
 
 
+def current_pasaran(today: date) -> dict:
+    # Reference: 17 May 1995 = Rabu Legi (Legi = index 0)
+    ref = date(1995, 5, 17)
+    days = (today - ref).days
+    idx = days % 5
+    name = PASARAN[idx]
+    return {
+        "name": name,
+        "traits": PASARAN_TRAITS[name],
+    }
+
+
+def current_moon_sign(today: date) -> Optional[str]:
+    try:
+        from immanuel import charts
+        from immanuel.const import chart as chart_const
+
+        # Use Jakarta noon as a neutral reference for collective moon tone
+        dt_str = f"{today.isoformat()} 12:00"
+        subject = charts.Subject(
+            date_time=dt_str,
+            latitude=JAKARTA_COORDS[0],
+            longitude=JAKARTA_COORDS[1],
+        )
+        natal = charts.Natal(subject)
+        return natal.objects[chart_const.MOON].sign.name
+    except Exception:
+        return None
+
+
 def weton(dob: date) -> dict:
     # Reference: 17 May 1995 = Rabu Legi (verified against Javanese calendar)
     ref = date(1995, 5, 17)

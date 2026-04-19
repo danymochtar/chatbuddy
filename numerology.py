@@ -78,6 +78,11 @@ def personal_day(dob: date, today: date) -> int:
     return reduce_number(pm + cd)
 
 
+def universal_day(today: date) -> int:
+    digits = [int(d) for d in today.strftime("%d%m%Y")]
+    return reduce_number(sum(digits))
+
+
 ARCHETYPES = {
     1: "Si Leader",
     2: "Si Pendamai",

@@ -7,12 +7,14 @@ import streamlit as st
 
 from numerology import (
     ARCHETYPES,
+    DAILY_VIBES,
     KARMIC_DEBT_MEANINGS,
     LESSON_MEANINGS,
     PINNACLE_MEANINGS,
     CHALLENGE_MEANINGS,
     build_profile,
     today_local,
+    universal_day,
 )
 from zodiac import (
     JAKARTA_COORDS,
@@ -20,6 +22,8 @@ from zodiac import (
     SIGN_TRAITS,
     chinese_zodiac,
     compute_chart,
+    current_moon_sign,
+    current_pasaran,
     geocode_city,
     sun_sign,
     weton,
@@ -605,15 +609,29 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
 
 
 def daily_block(profile: dict, today: date) -> str:
-    return (
-        f"=== VIBE HARI INI ({format_today_id(today)}) ===\n"
-        f"Tema tahun ini (angka {profile['personal_year']}): {profile['meanings']['personal_year']}\n"
-        f"Vibe bulan ini (angka {profile['personal_month']}): {profile['meanings']['personal_month']}\n"
-        f"Energi hari ini (angka {profile['personal_day']}): {profile['meanings']['personal_day']}\n\n"
-        "Pake ini buat kasih konteks timing — tips hari ini, bulan, dan tahun dirangkum "
-        "jadi satu panduan yg saling nyambung. JANGAN sebut 'Personal Day/Month/Year' — "
-        "sampein kyk lo emang 'tau' vibe-nya."
-    )
+    ud = universal_day(today)
+    pasaran = current_pasaran(today)
+    moon = current_moon_sign(today)
+    lines = [
+        f"=== VIBE HARI INI ({format_today_id(today)}) ===",
+        f"Tema tahun ini (angka {profile['personal_year']}): {profile['meanings']['personal_year']}",
+        f"Vibe bulan ini (angka {profile['personal_month']}): {profile['meanings']['personal_month']}",
+        f"Energi personal hari ini (angka {profile['personal_day']}): {profile['meanings']['personal_day']}",
+        "",
+        "-- Lapisan tambahan hari ini (untuk nuansa, WAJIB DISEMBUNYIKAN) --",
+        f"Energi kolektif hari ini (universal day {ud}): {DAILY_VIBES[ud]}",
+        f"Vibe harian Jawa ({pasaran['name']}): {pasaran['traits']}",
+    ]
+    if moon:
+        lines.append(f"Mood celestial hari ini (moon di {moon}): {SIGN_TRAITS[moon]}")
+    lines += [
+        "",
+        "Blend ke dalam 'Vibe Hari Ini' sebagai observasi intuitif — 1-2 paragraf yg ngerangkum "
+        "gimana energi hari ini kerasa buat user secara personal + sedikit lapisan kolektif "
+        "(suasana umum, vibe Indonesia, mood cuaca emosi). JANGAN sebut istilah teknis "
+        "(Personal Day, Universal Day, Pasaran, Moon, rasi). Compile aja jadi narasi organik.",
+    ]
+    return "\n".join(lines)
 
 
 def system_prompt(profile: dict, zodiac: dict | None, today: date) -> list:
@@ -655,10 +673,17 @@ def opening_prompt() -> str:
         "ZERO labels teknis. Tone: seseorang yang emang _kenal_ lo, lagi bilang apa yg "
         "dia liat.\n\n"
         "## 🌞 Vibe Hari Ini\n"
-        "Sebutin hari & tanggal (contoh: 'Sabtu, 19 April' — singkat). Rangkai energi hari "
-        "ini jadi observasi intuitif (1 paragraf pendek) + **3-4 tips praktis** buat hari "
-        "ini (bullet). Spesifik, actionable, nyambung sama karakter. Bukan 'be yourself' "
-        "tapi aksi konkret.\n\n"
+        "Sebutin hari & tanggal (contoh: 'Sabtu, 19 April' — singkat). Rangkai jadi "
+        "**2 paragraf**:\n"
+        "- Paragraf 1: energi personal user hari ini (dari angka mereka) — 2-3 kalimat yg "
+        "bikin user ngerasain vibe-nya.\n"
+        "- Paragraf 2: suasana kolektif hari ini — energi umum yg lagi mengalir (dari "
+        "universal day + vibe harian lokal + mood celestial). Bikin user ngerasa konteks "
+        "yg lebih luas, tapi compile halus — **JANGAN sebut 'universal day', 'pasaran', "
+        "'moon', 'rasi'**, cukup bilang 'secara umum...', 'hari ini tuh kerasa...', 'suasana "
+        "di luar sana...', 'mood kolektif hari ini...'.\n\n"
+        "Lanjut dengan **3-4 tips praktis buat hari ini** (bullet). Spesifik, actionable, "
+        "nyambung sama karakter user + vibe hari ini. Bukan 'be yourself' tapi aksi konkret.\n\n"
         "## 💬 Ngobrol Yuk\n"
         "1-2 kalimat singkat — undang user share apa yg lagi ada di kepala. Kasih tau kalau "
         "ada refleksi lebih dalem di menu sidebar.\n\n"
