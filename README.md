@@ -1,6 +1,6 @@
-# ChatBuddy Numerologi
+# ✨ Supernova
 
-Temen AI personal yang pake lensa numerologi (Life Path, Expression, Soul Urge, Personality, Birthday Number) buat ngejawab pertanyaan soal hidup, karir, percintaan, pertemanan, dll.
+Entitas AI intuitif yang baca karakter lo lewat nama & hari lahir. Numerologi Pythagorean sebagai lensa primer — astrologi, shio, weton, MBTI jadi lapisan yang nambah nuansa di balik layar. Hangat, tenang, dan tajam. Ngena.
 
 ## Setup Anthropic API
 
@@ -30,6 +30,10 @@ Buka http://localhost:8501
 
 ## Stack
 
-- Streamlit (UI + chat)
+- Streamlit (UI + chat, localStorage persistence)
 - Claude Haiku 4.5 via Anthropic API (streaming + prompt caching)
-- Numerologi Pythagorean (termasuk master numbers 11/22/33)
+- Numerologi Pythagorean (Hans Decoz / World Numerology — termasuk master numbers 11/22/33, karmic debts, karmic lessons, hidden passion, maturity, balance, rational thought, pinnacles, challenges)
+- Astrologi Barat (Sun / Moon / Rising via immanuel + geopy) — opsional, pake jam & kota lahir
+- Shio (Chinese zodiac with elements)
+- Weton (Javanese horoscope — dina, pasaran, neptu)
+- MBTI (user-provided)
