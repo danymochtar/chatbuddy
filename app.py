@@ -1547,11 +1547,9 @@ else:
                 "personality": t("aura_luar"),
             }
             active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
-            if active_debts:
-                st.markdown(f"**{t('pr_hidup_label')}:**")
-                for lbl, val in active_debts:
-                    short = KARMIC_DEBT_SHORT.get(val, "")
-                    st.markdown(f"- {lbl} (`{val}`) — _{short}_")
+            for lbl, val in active_debts:
+                short = KARMIC_DEBT_SHORT.get(val, "")
+                st.markdown(f"**{lbl}** (`{val}`) — _{short}_")
             lessons = profile.get("karmic_lessons") or []
             if lessons:
                 st.markdown(f"**{t('pelajaran_label')}:**")
