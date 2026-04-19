@@ -212,8 +212,20 @@ def _get_local_storage():
 
 
 def save_session_to_storage() -> None:
+    """Marks state as dirty. Actual localStorage write happens at end of
+    script via _flush_storage_if_dirty() — that avoids the race where
+    st.rerun() interrupts before the setItem component can render."""
+    st.session_state["_save_dirty"] = True
+
+
+def _flush_storage_if_dirty() -> None:
+    if not st.session_state.get("_save_dirty"):
+        return
+    if st.session_state.get("profile") is None:
+        st.session_state["_save_dirty"] = False
+        return
     ls = _get_local_storage()
-    if ls is None or st.session_state.profile is None:
+    if ls is None:
         return
     try:
         data = {
@@ -227,9 +239,10 @@ def save_session_to_storage() -> None:
             "mbti": st.session_state.get("mbti"),
             "career": st.session_state.get("career"),
         }
-        ls.setItem(STORAGE_KEY, json.dumps(data))
+        ls.setItem(STORAGE_KEY, json.dumps(data), key="save_session")
     except Exception:
-        pass
+        return
+    st.session_state["_save_dirty"] = False
 
 
 def load_session_from_storage() -> bool:
@@ -1719,3 +1732,5 @@ else:
         render_relationship_page(profile, zodiac)
 
     handle_chat_turn(profile, zodiac)
+
+_flush_storage_if_dirty()
