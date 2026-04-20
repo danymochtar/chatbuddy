@@ -130,6 +130,33 @@ TEXTS = {
     "nav_mbti": {"id": "MBTI", "en": "MBTI"},
     "nav_career": {"id": "Karir", "en": "Career"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
+    "nav_reflection": {"id": "Refleksi", "en": "Reflection"},
+    "reflection_header": {"id": "📝 Refleksi", "en": "📝 Reflection"},
+    "reflection_caption": {
+        "id": "Pertanyaan refleksi yang di-tailor ke karakter lo + fase yang lagi lo jalanin. Jawabannya bisa lo simpen jadi jurnal.",
+        "en": "Reflection questions tailored to your character + the phase you're in. Answers can be saved to your journal.",
+    },
+    "reflection_add": {"id": "➕ Tulis refleksi baru", "en": "➕ Write a new reflection"},
+    "reflection_q_label": {"id": "Pertanyaan yang lo pilih", "en": "The question you're answering"},
+    "reflection_q_ph": {
+        "id": "Paste salah satu pertanyaan di atas, atau tulis topik sendiri",
+        "en": "Paste one of the questions above, or write your own topic",
+    },
+    "reflection_a_label": {"id": "Jawaban lo", "en": "Your answer"},
+    "reflection_a_ph": {
+        "id": "Tulis apa aja yang muncul di kepala lo. Ga ada yang salah.",
+        "en": "Write whatever comes to mind. No right answer.",
+    },
+    "reflection_save": {"id": "Simpan ke jurnal", "en": "Save to journal"},
+    "reflection_empty": {
+        "id": "Belum ada entry. Pilih salah satu pertanyaan di atas, atau tulis topik sendiri.",
+        "en": "No entries yet. Pick a question above, or write your own topic.",
+    },
+    "reflection_err": {
+        "id": "Isi pertanyaan dan jawabannya ya 🙏",
+        "en": "Please fill in both question and answer 🙏",
+    },
+    "reflection_entries_header": {"id": "📓 Jurnal lo", "en": "📓 Your journal"},
     "mbti_header": {"id": "🧠 MBTI Lo", "en": "🧠 Your MBTI"},
     "mbti_intro": {
         "id": "MBTI ga bisa dihitung dari tanggal lahir — perlu ngerasain diri sendiri. Pilih tipe lo kalo udah tau, atau tes dulu lewat link di bawah.",
@@ -284,6 +311,7 @@ def _flush_storage_if_dirty() -> None:
             "language": st.session_state.get("language", "id"),
             "mbti": st.session_state.get("mbti"),
             "career": st.session_state.get("career"),
+            "journal": st.session_state.get("journal", []),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data), key="save_session")
     except Exception:
@@ -311,6 +339,7 @@ def load_session_from_storage() -> bool:
         st.session_state.language = data.get("language", "id")
         st.session_state.mbti = data.get("mbti")
         st.session_state.career = data.get("career")
+        st.session_state.journal = data.get("journal", [])
 
         # Backfill fields added after older sessions were first saved.
         profile = st.session_state.profile
@@ -1260,6 +1289,86 @@ def career_prompt(career: dict) -> str:
     )
 
 
+def reflection_prompt() -> str:
+    return (
+        "User buka page Refleksi. Kasih mereka **3 pertanyaan refleksi** yang "
+        "tailored ke karakter mereka (Soul Urge primer, blend sama fase hidup + "
+        "tema bulan). Pertanyaan harus open-ended, personal, ngajak refleksi "
+        "dalem — bukan yes/no, bukan generik.\n\n"
+        "Format output:\n"
+        "## 📝 Refleksi Buat Lo\n"
+        "1 kalimat pengantar — kasih vibe singkat kenapa 3 pertanyaan ini relevan "
+        "buat lo sekarang.\n\n"
+        "Lalu 3 pertanyaan dalam format:\n"
+        "1. **[Tema pertanyaan]** — [pertanyaan lengkap]\n"
+        "2. **[Tema pertanyaan]** — [pertanyaan lengkap]\n"
+        "3. **[Tema pertanyaan]** — [pertanyaan lengkap]\n\n"
+        "Pertanyaan harus merangsang jawaban yang layered, bukan jawaban satu "
+        "kalimat. Contoh tone: 'Apa yang lo takut kehilangan kalo lo benar-benar "
+        "jadi diri sendiri?' bukan 'Apa perasaan lo sekarang?'.\n\n"
+        "Tutup dengan 1 kalimat invitation ('pilih satu, tulis jawaban lo di "
+        "bawah — atau angkat topik sendiri') + `— Supernova`."
+    )
+
+
+def render_reflection_page(profile: dict, zodiac: dict | None) -> None:
+    st.header(t("reflection_header"))
+    st.caption(t("reflection_caption"))
+
+    # Generate reflection questions (cached per session/lang/day)
+    render_cached_text_page("reflection", reflection_prompt, profile, zodiac)
+
+    st.divider()
+
+    # Journal entry form
+    with st.expander(t("reflection_add")):
+        with st.form("reflection_form", clear_on_submit=True):
+            q = st.text_input(t("reflection_q_label"), placeholder=t("reflection_q_ph"))
+            a = st.text_area(
+                t("reflection_a_label"),
+                placeholder=t("reflection_a_ph"),
+                height=180,
+            )
+            save = st.form_submit_button(t("reflection_save"), use_container_width=True)
+        if save:
+            q_clean = _sanitize(q, 300)
+            a_clean = _sanitize(a, 3000)
+            if not q_clean or not a_clean:
+                st.error(t("reflection_err"))
+            else:
+                journal = st.session_state.get("journal", [])
+                journal.append({
+                    "id": datetime.now().strftime("j_%Y%m%d%H%M%S%f"),
+                    "question": q_clean,
+                    "response": a_clean,
+                    "created_at": datetime.now().isoformat(),
+                })
+                st.session_state.journal = journal
+                save_session_to_storage()
+                st.rerun()
+
+    # Past entries
+    journal = st.session_state.get("journal") or []
+    if not journal:
+        st.info(t("reflection_empty"))
+        return
+
+    st.markdown(f"### {t('reflection_entries_header')}")
+    # newest first, last 20
+    for entry in reversed(journal[-20:]):
+        with st.container(border=True):
+            header_cols = st.columns([5, 1])
+            header_cols[0].caption(entry["created_at"][:10])
+            if header_cols[1].button("🗑️", key=f"del_j_{entry['id']}"):
+                st.session_state.journal = [
+                    e for e in journal if e["id"] != entry["id"]
+                ]
+                save_session_to_storage()
+                st.rerun()
+            st.markdown(f"**{entry['question']}**")
+            st.markdown(entry["response"])
+
+
 def render_career_page(profile: dict, zodiac: dict | None) -> None:
     st.header(t("career_header"))
 
@@ -1698,6 +1807,8 @@ if "mbti" not in st.session_state:
     st.session_state.mbti = None
 if "career" not in st.session_state:
     st.session_state.career = None
+if "journal" not in st.session_state:
+    st.session_state.journal = []
 
 # 2. Restore from localStorage BEFORE rendering any widgets
 if "storage_loaded" not in st.session_state:
@@ -1880,6 +1991,7 @@ else:
             ("🧠", t("nav_mbti"), "mbti"),
             ("💼", t("nav_career"), "career"),
             ("💑", t("nav_relationship"), "relationship"),
+            ("📝", t("nav_reflection"), "reflection"),
             ("🗓️", t("nav_arah"), "arah"),
             ("♈", t("nav_zodiak"), "zodiak"),
             ("🐉", t("nav_shio"), "shio"),
@@ -1904,7 +2016,7 @@ else:
             for key in [
                 "profile", "zodiac", "messages", "opening_generated",
                 "cached_pages", "relationships", "current_page", "mbti",
-                "career", "_career_editing",
+                "career", "_career_editing", "journal",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
@@ -2024,6 +2136,9 @@ else:
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
+
+    elif page == "reflection":
+        render_reflection_page(profile, zodiac)
 
     handle_chat_turn(profile, zodiac)
 
