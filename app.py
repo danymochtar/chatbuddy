@@ -62,7 +62,20 @@ TEXTS = {
         "id": "_ada yang pengen dibahas?_",
         "en": "_anything on your mind?_",
     },
+    "onboarding_intro": {
+        "id": "✨ **Supernova** — entitas intuitif yang baca lo lewat nama dan hari lahir. Tenang, hangat, ga basa-basi. Kasih data di bawah, gw kasih balik potret diri yang bikin lo mikir _'gila, ngena banget'_.",
+        "en": "✨ **Supernova** — an intuitive entity that reads you through your name and birthday. Calm, warm, no small talk. Share your details below, I'll hand back a portrait that lands.",
+    },
     "kenalan": {"id": "Kenalan dulu yuk", "en": "Let's get to know you"},
+    "qa_daily_vibe": {"id": "🌞 Cek vibe hari ini", "en": "🌞 Check today's vibe"},
+    "qa_daily_vibe_help": {
+        "id": "Bacaan energi hari ini yang ringkas",
+        "en": "A concise read on today's energy",
+    },
+    "qa_trigger_msg": {
+        "id": "Cek vibe energi gw hari ini dong — yang ringkas tapi ngena. Fokus ke energi utama hari ini + kasih 3 tips actionable.",
+        "en": "Give me a concise read on today's energy — hit the main vibe and share 3 actionable tips.",
+    },
     "name_label": {
         "id": "Nama lengkap (sesuai akta lahir)",
         "en": "Full name (as on birth certificate)",
@@ -1736,6 +1749,8 @@ if st.session_state.profile is None:
                 if _pre_new_lang != st.session_state.language:
                     _switch_language(_pre_new_lang)
 
+    st.markdown(t("onboarding_intro"))
+    st.write("")
     st.subheader(t("kenalan"))
     with st.form("profile_form"):
         full_name = st.text_input(
@@ -1898,6 +1913,21 @@ else:
     page = st.session_state.current_page
 
     if page == "chat":
+        # Quick action: Daily Vibe Check — triggers a concise re-read of
+        # today's energy based on the current day's cycle numbers.
+        if st.session_state.opening_generated:
+            qa_cols = st.columns([2, 6])
+            if qa_cols[0].button(
+                t("qa_daily_vibe"),
+                key="qa_daily_vibe",
+                help=t("qa_daily_vibe_help"),
+            ):
+                st.session_state.messages.append(
+                    {"role": "user", "content": t("qa_trigger_msg")}
+                )
+                st.session_state["_pending_qa_response"] = True
+                st.rerun()
+
         display_msgs = st.session_state.messages
         # Hide a stale opening while we're about to regenerate it so the user
         # doesn't see yesterday's greeting flash before the new one streams in.
@@ -1935,6 +1965,26 @@ else:
                 st.session_state.opening_generated = True
                 save_session_to_storage()
                 st.rerun()
+
+        # Flush a pending quick-action response (e.g. Daily Vibe Check)
+        if st.session_state.get("_pending_qa_response"):
+            st.session_state["_pending_qa_response"] = False
+            with st.chat_message("assistant"):
+                placeholder = st.empty()
+                full_text = stream_assistant(
+                    messages_for_api=to_anthropic_messages(st.session_state.messages),
+                    system=system_prompt(profile, zodiac, today_local()),
+                    placeholder=placeholder,
+                )
+            if full_text:
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": full_text}
+                )
+                save_session_to_storage()
+            else:
+                # Generation failed — remove the triggering user message
+                if st.session_state.messages and st.session_state.messages[-1].get("role") == "user":
+                    st.session_state.messages.pop()
 
     elif page == "karakter":
         render_cached_text_page("karakter", kompleksitas_prompt, profile, zodiac)
