@@ -14,7 +14,11 @@ from numerology import (
     LESSON_SHORT,
     PINNACLE_MEANINGS,
     CHALLENGE_MEANINGS,
+    MEANINGS,
+    MONTH_THEMES,
+    YEAR_THEMES,
     build_profile,
+    personal_cycles_full,
     today_local,
     universal_day,
 )
@@ -456,6 +460,13 @@ def language_directive() -> str:
             "  - `## 🌱 Vibe Tahun Ini Buat Karir` → `## 🌱 This Year's Career Vibe`\n"
             "  - `## 🔀 Alternatif Karir` → `## 🔀 Career Alternatives`\n"
             "  - `## 🚀 Next Level` (keep as-is)\n"
+            "  - `### 📅 Personal Year` (keep as-is — numerology term)\n"
+            "  - `### 🗓️ Personal Month` (keep as-is)\n"
+            "  - `### ✨ Personal Day (reduced)` → same in EN\n"
+            "  - `### 🔢 Personal Day (unreduced)` → same in EN\n"
+            "  - `### 🌟 Master Number` (keep as-is)\n"
+            "  - `### 🌍 Universal Day` (keep as-is)\n"
+            "  - `### 🎯 Game Plan Hari Ini` → `### 🎯 Today's Game Plan`\n"
             "- Translate Indonesian context terms to English (misi hidup → life mission, "
             "panggilan hati → heart's calling, aura luar → outer aura, bakat bawaan → "
             "natural talent, talenta lahir → birthday gift, PR hidup → life challenges, "
@@ -692,29 +703,61 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
 
 
 def daily_block(profile: dict, today: date) -> str:
+    dob = date.fromisoformat(profile["dob"])
+    cycles = personal_cycles_full(dob, today)
+    py, pm, pd = cycles["py"], cycles["pm"], cycles["pd"]
+    master_hits = cycles["master_numbers"]
     ud = universal_day(today)
     pasaran = current_pasaran(today)
     moon = current_moon_sign(today)
+
+    all_numbers = [py["notation"], pm["notation"], pd["notation"], str(ud)]
+    if master_hits:
+        all_numbers.append(f"master: {', '.join(str(m) for m in master_hits)}")
+
     lines = [
         f"=== VIBE HARI INI ({format_today_id(today)}) ===",
-        f"Tema tahun ini (angka {profile['personal_year']}): {profile['meanings']['personal_year']}",
-        f"Vibe bulan ini (angka {profile['personal_month']}): {profile['meanings']['personal_month']}",
-        f"Energi personal hari ini (angka {profile['personal_day']}): {profile['meanings']['personal_day']}",
+        f"Sistem: Hans Decoz (World Numerology) — DOB {profile['dob']} × today {today.isoformat()}",
+        f"Angka-angka yang muncul: {', '.join(all_numbers)}",
         "",
-        "-- Lapisan tambahan hari ini (untuk nuansa, WAJIB DISEMBUNYIKAN) --",
-        f"Energi kolektif hari ini (universal day {ud}): {DAILY_VIBES[ud]}",
-        f"Vibe harian Jawa ({pasaran['name']}): {pasaran['traits']}",
+        f"**Personal Year** = {py['notation']} ({py['reduced']}): {YEAR_THEMES[py['reduced']]}",
+        f"  → Tema besar tahun {today.year}. Pelajaran & peluang utama.",
+        "",
+        f"**Personal Month** = {pm['notation']} ({pm['reduced']}): {MONTH_THEMES[pm['reduced']]}",
+        f"  → Tone bulan {today.strftime('%B')}. Nge-shape keputusan/aksi 30 hari ini.",
+        "",
+        f"**Personal Day (reduced)** = {pd['reduced']}: {DAILY_VIBES[pd['reduced']]}",
+        f"  → Vibration utama hari ini. Mood & energi dominan.",
+        "",
+        f"**Personal Day (unreduced notation)** = {pd['notation']} (raw {pd['raw']}) "
+        f"→ 'flavor' sebelum direduksi. Angka raw {pd['raw']} ngasih nuansa tambahan "
+        f"(komponen angkanya: dari {MEANINGS.get(pd['raw'] if pd['raw'] <= 9 else reduce_one(pd['raw']), '')}).",
+        "",
+    ]
+    if master_hits:
+        lines += [
+            f"**Master numbers yang muncul**: {', '.join(str(m) for m in master_hits)}",
+        ]
+        for m in master_hits:
+            lines.append(f"  → {m}: {MEANINGS[m]} (layer spiritual/intuitif elevated)")
+        lines.append("")
+    lines += [
+        f"**Universal Day** = {ud}: {DAILY_VIBES[ud]}",
+        f"  → Energi kolektif hari ini — yang semua orang share, konteks di luar personal.",
+        "",
+        "-- Lapisan invisible tambahan (untuk texture, JANGAN SEBUT LABEL) --",
+        f"Pasaran Jawa ({pasaran['name']}): {pasaran['traits']}",
     ]
     if moon:
-        lines.append(f"Mood celestial hari ini (moon di {moon}): {SIGN_TRAITS[moon]}")
-    lines += [
-        "",
-        "Blend ke dalam 'Vibe Hari Ini' sebagai observasi intuitif — 1-2 paragraf yg ngerangkum "
-        "gimana energi hari ini kerasa buat user secara personal + sedikit lapisan kolektif "
-        "(suasana umum, vibe Indonesia, mood cuaca emosi). JANGAN sebut istilah teknis "
-        "(Personal Day, Universal Day, Pasaran, Moon, rasi). Compile aja jadi narasi organik.",
-    ]
+        lines.append(f"Moon position ({moon}): {SIGN_TRAITS[moon]}")
     return "\n".join(lines)
+
+
+def reduce_one(n: int) -> int:
+    # single reduction step helper for display
+    while n > 9:
+        n = sum(int(d) for d in str(n))
+    return n
 
 
 def temporal_anchor(today: date) -> str:
@@ -847,17 +890,34 @@ def opening_prompt() -> str:
         "```\n\n"
         "Tanpa attribution. Tanpa prefix 'kamu unik karena...'. Just the quote.\n\n"
         "## 🌞 Vibe Hari Ini\n"
-        "Sebutin hari & tanggal (contoh: 'Sabtu, 19 April' — singkat). Rangkai jadi "
-        "**2 paragraf**:\n"
-        "- Paragraf 1: energi personal user hari ini (dari angka mereka) — 2-3 kalimat yg "
-        "bikin user ngerasain vibe-nya.\n"
-        "- Paragraf 2: suasana kolektif hari ini — energi umum yg lagi mengalir (dari "
-        "universal day + vibe harian lokal + mood celestial). Bikin user ngerasa konteks "
-        "yg lebih luas, tapi compile halus — **JANGAN sebut 'universal day', 'pasaran', "
-        "'moon', 'rasi'**, cukup bilang 'secara umum...', 'hari ini tuh kerasa...', 'suasana "
-        "di luar sana...', 'mood kolektif hari ini...'.\n\n"
-        "Lanjut dengan **3-4 tips praktis buat hari ini** (bullet). Spesifik, actionable, "
-        "nyambung sama karakter user + vibe hari ini. Bukan 'be yourself' tapi aksi konkret.\n\n"
+        "**PENGECUALIAN aturan hide-terminology**: di section INI lo BOLEH sebut istilah "
+        "numerologi secara terbuka karena user minta breakdown eksplisit per komponen.\n\n"
+        "Struktur WAJIB diikutin:\n\n"
+        "1. **Intro singkat** (1-2 kalimat):\n"
+        "   _\"Pake sistem Hans Decoz (World Numerology) yang ngeliat DOB lo & tanggal "
+        "hari ini, muncul angka-angka: [list angka dari system prompt].\"_\n\n"
+        "2. **Breakdown 6 komponen** (heading ### per komponen). Untuk setiap komponen, "
+        "kasih 3 poin bullet:\n"
+        "   - **Arti inti** (1-2 kalimat)\n"
+        "   - **Aplikasi hari ini** (kerja, relationship, decision making — spesifik)\n"
+        "   - **Embrace vs hindari** (✅ ... / ❌ ...)\n\n"
+        "   6 komponen WAJIB:\n"
+        "   a. `### 📅 Personal Year [notation]` — tema besar tahun ini\n"
+        "   b. `### 🗓️ Personal Month [notation]` — tone bulan ini\n"
+        "   c. `### ✨ Personal Day (reduced) [N]` — vibration utama hari ini\n"
+        "   d. `### 🔢 Personal Day (unreduced) [raw/reduced notation]` — flavor mentahnya "
+        "dari sum raw sebelum direduksi; kasih insight nuansa tambahan dari angka raw\n"
+        "   e. `### 🌟 Master Number` — CUMA kalo ada master di chain (11/22/33). Kalo ga "
+        "ada, **skip section ini entirely**, jangan bilang 'ga ada master'\n"
+        "   f. `### 🌍 Universal Day [N]` — energi kolektif hari itu\n\n"
+        "3. **Game Plan** (1 paragraf, heading `### 🎯 Game Plan Hari Ini`):\n"
+        "   Sintesa semua komponen di atas jadi 1 paragraf action-oriented. Apa 2-3 "
+        "prioritas konkret hari ini berdasarkan sinergi angka-angka? Rekomendasi aksi "
+        "spesifik (bukan 'be yourself'), contoh: 'pagi-pagi beresin [X] karena...', "
+        "'hindari decision berat sebelum siang karena...', 'sore cocok buat [Y]'.\n\n"
+        "Tetep pake bahasa casual 'lo/gw'. Blend halus aspek lain (pasaran, moon) ke dalem "
+        "narasi kalo relevan — **jangan jadikan section sendiri**. Tips praktis ada di "
+        "Game Plan, jangan buat bullet points tips terpisah.\n\n"
         "## 💬 Ngobrol Yuk\n"
         "1-2 kalimat singkat — undang user share apa yg lagi ada di kepala. Kasih tau kalau "
         "ada refleksi lebih dalem di menu sidebar.\n\n"

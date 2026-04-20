@@ -83,6 +83,40 @@ def universal_day(today: date) -> int:
     return reduce_number(sum(digits))
 
 
+def personal_cycles_full(dob: date, today: date) -> dict:
+    """Returns Personal Year/Month/Day with both raw sum and reduced value,
+    plus notation (e.g. '25/7' or just '7' if already single/master).
+    """
+    bm = reduce_number(dob.month)
+    bd = reduce_number(dob.day)
+    cy = reduce_number(digit_sum(dob.year))
+
+    py_raw = bm + bd + cy
+    py_reduced = reduce_number(py_raw)
+
+    cm = reduce_number(today.month)
+    pm_raw = py_reduced + cm
+    pm_reduced = reduce_number(pm_raw)
+
+    pd_raw = pm_reduced + today.day
+    pd_reduced = reduce_number(pd_raw)
+
+    def notation(raw, reduced):
+        if raw == reduced:
+            return str(reduced)
+        return f"{raw}/{reduced}"
+
+    all_values = {py_raw, py_reduced, pm_raw, pm_reduced, pd_raw, pd_reduced}
+    master_hits = sorted(MASTER_NUMBERS & all_values)
+
+    return {
+        "py": {"raw": py_raw, "reduced": py_reduced, "notation": notation(py_raw, py_reduced)},
+        "pm": {"raw": pm_raw, "reduced": pm_reduced, "notation": notation(pm_raw, pm_reduced)},
+        "pd": {"raw": pd_raw, "reduced": pd_reduced, "notation": notation(pd_raw, pd_reduced)},
+        "master_numbers": master_hits,
+    }
+
+
 ARCHETYPES = {
     1: "Pemimpin",
     2: "Pendamai",
