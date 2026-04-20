@@ -428,13 +428,12 @@ def language_directive() -> str:
     lang = st.session_state.get("language", "id")
     if lang == "en":
         return (
-            "**LANGUAGE (CRITICAL): Respond in casual English ONLY — EVERYTHING in English.** "
-            "Use 'you/I', warm friend-like tone.\n"
-            "- Do NOT respond in Indonesian. If the instruction below is in Indonesian, "
-            "translate conceptually and answer in English.\n"
-            "- **ALL section headings must be in English.** If an instruction specifies a "
-            "heading like `## 🌞 Vibe Hari Ini`, render it as `## 🌞 Today's Vibe`. "
-            "Other examples:\n"
+            "**Language note** — respond in casual English. Use 'you/I', warm friend-like "
+            "tone. If the instruction below uses Indonesian phrasing (context labels, "
+            "heading examples), translate conceptually and reply in English.\n"
+            "- Section headings in English. If an instruction specifies `## 🌞 Vibe Hari "
+            "Ini`, render as `## 🌞 Today's Vibe`. Other mappings (translate when they "
+            "appear):\n"
             "  - `## 👋 Halo [Nama]` → `## 👋 Hi [Name]`\n"
             "  - `## 📖 Cerita Singkat Tentang Lo` → `## 📖 A Quick Story About You`\n"
             "  - `## 📖 Siapa Lo, Sebenernya` → `## 📖 Who You Really Are`\n"
@@ -467,16 +466,16 @@ def language_directive() -> str:
             "  - `### 🌟 Master Number` (keep as-is)\n"
             "  - `### 🌍 Universal Day` (keep as-is)\n"
             "  - `### 🎯 Game Plan Hari Ini` → `### 🎯 Today's Game Plan`\n"
-            "- Translate Indonesian context terms to English (misi hidup → life mission, "
-            "panggilan hati → heart's calling, aura luar → outer aura, bakat bawaan → "
-            "natural talent, talenta lahir → birthday gift, PR hidup → life challenges, "
-            "obsesi tersembunyi → hidden drive, versi dewasa → mature version, vibe hari "
-            "ini → today's vibe, arah → direction, etc.).\n\n"
+            "- Translate context terms (misi hidup → life mission, panggilan hati → "
+            "heart's calling, aura luar → outer aura, bakat bawaan → natural talent, "
+            "talenta lahir → birthday gift, PR hidup → life challenges, obsesi "
+            "tersembunyi → hidden drive, versi dewasa → mature version, etc.) naturally.\n\n"
         )
     return (
-        "**BAHASA: Lo WAJIB ngomong pake bahasa Indonesia casual** ('lo/gw' atau 'kamu/aku' "
-        "nyesuain vibe user). Headings juga pake bahasa Indonesia (jangan bilang 'Today's "
-        "Vibe', pake 'Vibe Hari Ini'). Jangan campur English kecuali istilah umum.\n\n"
+        "**Catatan bahasa** — jawab dalam bahasa Indonesia casual ('lo/gw' atau 'kamu/aku' "
+        "ngikut vibe user). Headings juga pake bahasa Indonesia (jangan bilang 'Today's "
+        "Vibe', pake 'Vibe Hari Ini'). Sesekali boleh selipin English term umum (vibe, "
+        "orbit, chemistry, dst), tapi backbone-nya Indonesia.\n\n"
     )
 
 
@@ -505,8 +504,11 @@ def base_persona() -> str:
         "- Metafora celestial (orbit, gravitasi, nebula, bintang) seperlunya aja — jangan "
         "overdose, kadang lebih kuat pake bahasa biasa\n"
         "- Emoji sparingly (✨🌌 occasional), bukan tiap kalimat\n"
-        "- Sesekali sign-off **— Supernova** atau **— SN** di akhir pesan yang bermakna (bukan "
-        "tiap pesan, cuma saat pesan punya berat refleksi / closure)\n"
+        "- **Sign-off**: di akhir pesan panjang yang bermakna (opening Beranda, semua page "
+        "menu: Karakter, Sisi Batin, PR Hidup, Fase Hidup, Arah, Zodiak, Shio, Weton, MBTI, "
+        "Karir, Relationship) — **tutup dengan `— Supernova`** atau `— SN`. Di chat pendek "
+        "/ jawaban singkat, ga perlu sign-off. Intinya: pesan yg kerasa 'berat' atau "
+        "'closure' dikasih signature, yg casual back-and-forth ga.\n"
         "- Paragraf naratif; bullet cuma kalo emang list-format yg tepat\n\n"
         "**ATURAN (PENTING):**\n"
         "- **JANGAN narate diri sendiri** — jangan bilang 'gw pake numerologi', 'gw baca "
@@ -942,35 +944,45 @@ def opening_prompt() -> str:
 
 def kompleksitas_prompt() -> str:
     return (
-        "Tulis **analisa karakter mendalam** tentang gw (3-5 paragraf storytelling, bukan "
-        "list). Gabungin semua lapisan jadi cerita utuh 'siapa lo': misi hidup, bakat bawaan, "
-        "panggilan hati, aura luar, talenta lahir, PLUS lapisan cara tampil / emosi internal "
-        "/ first impression (dari data lahir tambahan). Tunjukin:\n"
-        "- Paradoks / harmoni antar aspek (misi vs bakat, luar vs dalem)\n"
-        "- Kekuatan natural lo\n"
-        "- Shadow / tendency yg harus diwaspadain\n"
-        "- Bagaimana semua puzzle-piece ini nyambung jadi karakter unik lo\n\n"
-        "Pake heading ## di atas (misal `## 👤 Kompleksitas Karakter Lo`). Sertakan angka "
-        "dalam kurung saat nyebut trait kunci. **Zero istilah teknis.** Astrologi WAJIB "
-        "invisible — sampein sebagai observasi biasa, bukan reading."
+        "User buka page Karakter — mereka mau tau _siapa lo, kalo gw liat keseluruhan_. "
+        "Ini bukan ringkasan; ini potret dalem yang bikin mereka bilang 'gila, ngena "
+        "banget'.\n\n"
+        "Tulis **3-5 paragraf storytelling** yang gabungin semua lapisan jadi cerita utuh: "
+        "misi hidup, bakat bawaan, panggilan hati, aura luar, talenta lahir, plus lapisan "
+        "cara tampil / emosi internal / first impression. Bukan list — cerita yang mengalir.\n\n"
+        "Yang wajib lo tunjukin:\n"
+        "- **Paradoks / harmoni** antar aspek — dimana mereka saling tarik, dimana saling "
+        "ngisi (misi vs bakat, luar vs dalem, kekuatan vs kebutuhan)\n"
+        "- **Kekuatan natural** — yang udah jadi 'bawaan' lo, ga perlu effort\n"
+        "- **Shadow** — tendency yg harus diwaspadain, bukan buat nakut-nakutin tapi "
+        "buat self-awareness\n"
+        "- **Bagaimana semuanya nyambung** jadi karakter unik — insight yang bikin user "
+        "ngerasa 'this is me'\n\n"
+        "Pake heading `## 👤 Kompleksitas Karakter Lo`. Sertakan angka dalam kurung "
+        "sparingly saat nyebut trait kunci. **Zero istilah teknis.** Astrologi invisible — "
+        "observasi, bukan reading.\n\n"
+        "Tutup dengan `— Supernova` di bawah setelah paragraf terakhir."
     )
 
 
 def inner_prompt() -> str:
     return (
-        "Tulis tentang **aspek dalam** gw — hal-hal yg ga kelihatan dari luar tapi jadi motor "
-        "dalem. Fokus ke 4 hal:\n"
-        "1. **Obsesi tersembunyi** (drive yg paling sering nongol, dari pola nama lo) — "
-        "ini yg sering keluar di pilihan-pilihan kecil sehari-hari.\n"
-        "2. **Versi dewasa lo** (siapa lo akan grow into setelah umur ~35) — bagaimana "
-        "karakter lo bakal matang.\n"
-        "3. **Cara lo handle emosi saat stres** (balance number) — respon natural lo saat "
-        "kesusahan / tekanan.\n"
-        "4. **Gaya berpikir lo** (rational thought) — cara natural lo memproses informasi "
-        "& ambil keputusan mental.\n\n"
-        "Pake heading ## di atas (misal `## 🔍 Sisi Batin Lo`). 4-5 paragraf storytelling. "
-        "Angka dalam kurung saat nyebut trait. **Zero istilah teknis** ('hidden passion', "
-        "'maturity number', 'balance number', 'rational thought' dll JANGAN disebut)."
+        "User buka page Sisi Batin — ini ruang yang cuma orang-orang paling deket yang "
+        "bisa liat. Gw mau tunjukin mereka pada diri sendiri dari _dalem_.\n\n"
+        "Fokus 4 hal:\n"
+        "1. **Obsesi tersembunyi** — drive yg paling sering nongol di pilihan-pilihan "
+        "kecil sehari-hari, yang lo sendiri mungkin ga sadarin.\n"
+        "2. **Versi dewasa lo** — siapa lo bakal jadi setelah umur ~35, gimana karakter "
+        "lo matang, apa yg muncul setelah melalui semua ini.\n"
+        "3. **Cara lo handle emosi saat stres** — respon natural lo saat tekanan, saat "
+        "dunia kerasa berat.\n"
+        "4. **Gaya berpikir lo** — cara natural lo process info & ambil keputusan.\n\n"
+        "Tulis **4-5 paragraf storytelling** yang intim & mengalir. Bukan laporan, tapi "
+        "kayak lo dibacain dari dalam diri lo sendiri. Aim for insight yang bikin user "
+        "terdiam sebentar.\n\n"
+        "Pake heading `## 🔍 Sisi Batin Lo`. Angka dalam kurung saat nyebut trait "
+        "penting. **Zero istilah teknis** ('hidden passion', 'maturity number', 'balance', "
+        "'rational thought' JANGAN disebut). Tutup dengan `— Supernova`."
     )
 
 
@@ -1014,16 +1026,20 @@ def karmic_prompt() -> str:
 
 def arah_prompt() -> str:
     return (
-        "Tulis **panduan arah buat bulan ini + tahun ini** — dua section terpisah tapi "
-        "terkait. Jangan bahas energi hari ini (udah di chat utama). Fokus:\n\n"
+        "Bulan & tahun — dua frame waktu yang saling berbisik. Gw mau kasih tau apa yang "
+        "bijak difokusin sekarang, dan apa yang pelan-pelan dibuka selama setahun.\n\n"
+        "Struktur — dua section:\n\n"
         "## 🗓️ Bulan Ini\n"
-        "1 paragraf soal tema/vibe bulan ini. Terus 3-4 tips actionable buat sebulan ke "
-        "depan — apa yg cocok diprioritize, apa yg bijak dihindari.\n\n"
+        "1 paragraf tentang tema/vibe bulan ini — apa yang lagi mengalir, apa yang "
+        "dibuka. Terus **3-4 tips actionable** buat 30 hari ke depan — apa yang cocok "
+        "di-prioritize, apa yang bijak di-hold.\n\n"
         "## 🌱 Tahun Ini\n"
-        "1 paragraf soal chapter besar tahun ini. Terus 3-4 tips zoom-out — apa yg bijak "
-        "difokusin / di-release sepanjang tahun.\n\n"
-        "Hubungkan bulan ↔ tahun (bulan ini adalah microstep dari tahun). Specific & "
-        "actionable. **Zero istilah teknis**."
+        "1 paragraf tentang chapter besar tahun — apa bab hidup yang lo jalanin, apa "
+        "pelajaran utamanya. Terus **3-4 tips zoom-out** — apa yang bijak difokusin "
+        "sepanjang tahun, apa yang bijak di-release.\n\n"
+        "Hubungkan: bulan ini adalah microstep dari tahun. Tunjukin gimana yang lo "
+        "kerjain bulan ini nyambung ke chapter besar. Specific & actionable, bukan "
+        "'be yourself'. **Zero istilah teknis**. Tutup dengan `— Supernova`."
     )
 
 
@@ -1197,8 +1213,9 @@ def career_prompt(career: dict) -> str:
         parts.append(f"Lama di role: {career['years']}")
     career_block = "\n".join(parts)
     return (
-        f"Gw mau lo analisa karir gw berdasarkan karakter lengkap gw (numerologi + lapisan "
-        f"lahir + MBTI kalau ada + tema tahun ini dari system prompt).\n\n"
+        "Karir — tempat yang habisin banyak jam hidup lo. Gw mau liat gimana karakter "
+        "bawaan lo nyambung (atau gesekan) sama role ini, dan gimana lo bisa bikin ini "
+        "jadi tempat tumbuh, bukan drain.\n\n"
         f"{career_block}\n\n"
         "Pake heading ## supaya jelas sectionsnya:\n\n"
         "## 💼 Kecocokan Sama Karakter Lo\n"
@@ -1226,7 +1243,7 @@ def career_prompt(career: dict) -> str:
         "\"## 🚀 Next Level\" + kasih 2-3 arah pengembangan / specialization yg bisa bikin "
         "role sekarang lebih klop sama karakter lo** (bukan pindah kerja, tapi evolve).\n\n"
         "Style: teman curhat yg ngerti career, bukan HR consultant kaku. **Zero istilah "
-        "teknis numerologi/astrologi** (blend halus)."
+        "teknis numerologi/astrologi** (blend halus). Tutup dengan `— Supernova`."
     )
 
 
@@ -1342,7 +1359,9 @@ def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") 
         )
 
     return (
-        f"Gw mau tau gimana dinamika gw sama orang ini (tipe hubungan: **{relation_type}**):\n\n{partner_block}\n\n"
+        f"Hubungan — gravitasi antara dua orang. Gw mau liat dimana lo dua pull ke arah "
+        f"yang sama, dimana saling push, dan gimana lo caranya orbit bareng.\n\n"
+        f"Data orang yang lo share (tipe hubungan: **{relation_type}**):\n\n{partner_block}\n\n"
         "Pake konteks energi hari ini, vibe bulan ini, dan tema tahun ini gw juga (udah "
         "ada di system prompt) saat kasih insight timing.\n\n"
         "Bikinin analisa compatibility yg blend karakter gw vs karakter dia. Pake heading ##:\n\n"
@@ -1364,7 +1383,7 @@ def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") 
         "bulan ini vs yg bijak di-hold buat tahun ini.\n\n"
         "Style: temen curhat, bukan therapy session kaku. **Zero istilah teknis** (jangan "
         "sebut Life Path / zodiac / Personal Year dll — blend halus). Pake angka dalam "
-        "kurung kalo perlu biar clear."
+        "kurung kalo perlu biar clear. Tutup dengan `— Supernova`."
     )
 
 
