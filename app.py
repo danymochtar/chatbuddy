@@ -717,8 +717,37 @@ def daily_block(profile: dict, today: date) -> str:
     return "\n".join(lines)
 
 
+def temporal_anchor(today: date) -> str:
+    months_id = [
+        "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    ]
+    current_month_name = months_id[today.month]
+    last_month_idx = 12 if today.month == 1 else today.month - 1
+    last_month_year = today.year - 1 if today.month == 1 else today.year
+    return (
+        f"## ⏰ TEMPORAL ANCHOR (WAJIB diikutin — jangan pake training cutoff)\n"
+        f"- **TANGGAL HARI INI**: {format_today_id(today)} (ISO: {today.isoformat()})\n"
+        f"- **TAHUN SEKARANG**: {today.year}\n"
+        f"- **BULAN SEKARANG**: {current_month_name} {today.year}\n"
+        f"- Kalo user bilang 'tahun lalu' / 'last year' → **{today.year - 1}**\n"
+        f"- Kalo user bilang '2 tahun lalu' → **{today.year - 2}**\n"
+        f"- Kalo user bilang 'tahun depan' / 'next year' → **{today.year + 1}**\n"
+        f"- Kalo user bilang 'bulan lalu' → **{months_id[last_month_idx]} {last_month_year}**\n"
+        f"- **PENTING: JANGAN pake tahun dari knowledge training lo** — anchor tanggal "
+        f"sekarang adalah {today.isoformat()}. Setiap kali ada referensi waktu relatif, "
+        f"hitung dari {today.year}, bukan dari 2024/2025 yang mungkin lo ingat dari "
+        f"training data.\n\n"
+    )
+
+
 def system_prompt(profile: dict, zodiac: dict | None, today: date) -> list:
-    text = "\n\n".join([base_persona(), profile_block(profile, zodiac), daily_block(profile, today)])
+    text = "\n\n".join([
+        temporal_anchor(today),
+        base_persona(),
+        profile_block(profile, zodiac),
+        daily_block(profile, today),
+    ])
     return [{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}]
 
 
