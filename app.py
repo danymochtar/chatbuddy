@@ -338,6 +338,8 @@ def _flush_storage_if_dirty() -> None:
             "career": st.session_state.get("career"),
             "journal": st.session_state.get("journal", []),
             "oracle_history": st.session_state.get("oracle_history", []),
+            "user_notes": st.session_state.get("user_notes", []),
+            "last_memory_extract_at": st.session_state.get("last_memory_extract_at", 0),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data), key="save_session")
     except Exception:
@@ -367,6 +369,8 @@ def load_session_from_storage() -> bool:
         st.session_state.career = data.get("career")
         st.session_state.journal = data.get("journal", [])
         st.session_state.oracle_history = data.get("oracle_history", [])
+        st.session_state.user_notes = data.get("user_notes", [])
+        st.session_state.last_memory_extract_at = data.get("last_memory_extract_at", 0)
 
         # Backfill fields added after older sessions were first saved.
         profile = st.session_state.profile
@@ -770,6 +774,20 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
             lines.append(f"Kebutuhan emosi internal / comfort zone: {SIGN_TRAITS[zodiac['moon']]}")
         if zodiac.get("rising"):
             lines.append(f"Vibe pertama orang liat dari dia: {SIGN_TRAITS[zodiac['rising']]}")
+
+    # Memory notes — facts user shared in previous sessions. Blend halus.
+    user_notes = st.session_state.get("user_notes") or []
+    if user_notes:
+        lines += [
+            "",
+            "-- CATATAN DARI PERCAKAPAN SEBELUMNYA --",
+            "(Fakta yang user udah cerita. Blend halus ke respons saat relevan — "
+            "bikin user ngerasa lo inget. JANGAN recite list ini, JANGAN bilang "
+            "'berdasarkan catatan gw' atau 'sebelumnya lo pernah bilang' berulang-ulang. "
+            "Cuma reference natural kalau emang cocok sama konteks pertanyaan mereka.)",
+        ]
+        for note in user_notes:
+            lines.append(f"- {note}")
     return "\n".join(lines)
 
 
@@ -1814,6 +1832,90 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
                     save_session_to_storage()
 
 
+MEMORY_EXTRACT_THRESHOLD = 10  # run memory extractor every N user messages
+
+
+def _extract_memory_prompt(recent_exchanges: str) -> str:
+    return (
+        "Analisis percakapan di bawah. Extract 3-5 fakta penting tentang USER "
+        "(bukan tentang Supernova) yang bermanfaat diingat buat sesi selanjutnya.\n\n"
+        "Fokus:\n"
+        "- Goals / mimpi yang user sebut\n"
+        "- Struggles / problem yang user hadapi sekarang\n"
+        "- Orang penting dalam hidup user (pasangan, sahabat, keluarga, bos)\n"
+        "- Keputusan yang lagi dipikirin\n"
+        "- Life event recent (pindah, ganti kerja, break up, sakit, dll)\n\n"
+        "Hindari:\n"
+        "- Detail trivial (cuaca, hari libur)\n"
+        "- Reading Supernova sendiri (itu konteks, bukan fakta user)\n"
+        "- Opini atau saran Supernova\n\n"
+        "Format output: bullet sederhana, 1 kalimat per fakta, tanpa heading. "
+        "Pake bahasa Indonesia casual singkat. Contoh:\n"
+        "- User lagi nimbang pindah dari kerjaan ke startup\n"
+        "- Punya pasangan bernama Raimi, komunikasi lagi jadi concern\n"
+        "- Baru break up bulan lalu\n\n"
+        "Kalo percakapan ga punya fakta baru yang bermanfaat, return 1 baris: NONE.\n\n"
+        f"Percakapan:\n{recent_exchanges}"
+    )
+
+
+def _extract_memory_notes(messages: list) -> list[str]:
+    # Pull the last ~20 turns, cap per-message content to keep the call cheap
+    recent = messages[-20:]
+    if len(recent) < 4:
+        return []
+    exchanges = "\n".join(
+        f"{m['role'].upper()}: {m['content'][:500]}" for m in recent
+    )
+    try:
+        client = get_client()
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=400,
+            messages=[{"role": "user", "content": _extract_memory_prompt(exchanges)}],
+        )
+    except Exception:
+        return []
+    text = ""
+    for block in response.content:
+        if getattr(block, "type", "") == "text":
+            text += block.text
+    if "NONE" in text.upper() and len(text.strip().splitlines()) <= 2:
+        return []
+    notes: list[str] = []
+    for line in text.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        for prefix in ("- ", "* ", "• "):
+            if line.startswith(prefix):
+                cleaned = line[len(prefix):].strip()
+                if cleaned and len(cleaned) < 300:
+                    notes.append(cleaned)
+                break
+    return notes[:5]
+
+
+def maybe_extract_memory() -> None:
+    """Run the memory extractor every N user messages; merge notes with existing."""
+    msgs = st.session_state.messages
+    user_count = sum(1 for m in msgs if m.get("role") == "user")
+    last_at = st.session_state.get("last_memory_extract_at", 0)
+    if user_count - last_at < MEMORY_EXTRACT_THRESHOLD:
+        return
+    new_notes = _extract_memory_notes(msgs)
+    st.session_state.last_memory_extract_at = user_count
+    if new_notes:
+        existing = st.session_state.get("user_notes") or []
+        # Dedupe: skip notes whose lowercase text matches anything already stored
+        existing_lower = {n.lower() for n in existing}
+        fresh = [n for n in new_notes if n.lower() not in existing_lower]
+        merged = existing + fresh
+        # Rolling window — keep last 20 notes only
+        st.session_state.user_notes = merged[-20:]
+    save_session_to_storage()
+
+
 def handle_chat_turn(profile: dict, zodiac: dict | None) -> None:
     user_input = st.chat_input(t("chat_placeholder"))
     if user_input:
@@ -1833,6 +1935,12 @@ def handle_chat_turn(profile: dict, zodiac: dict | None) -> None:
         if full_text:
             st.session_state.messages.append({"role": "assistant", "content": full_text})
             save_session_to_storage()
+            # After each successful turn, possibly extract memory notes
+            # (runs only every N user messages).
+            try:
+                maybe_extract_memory()
+            except Exception:
+                pass
         else:
             # Claude call failed — remove the user message we just appended so
             # user can resend without a dangling turn in the transcript.
@@ -1910,6 +2018,10 @@ if "journal" not in st.session_state:
     st.session_state.journal = []
 if "oracle_history" not in st.session_state:
     st.session_state.oracle_history = []
+if "user_notes" not in st.session_state:
+    st.session_state.user_notes = []
+if "last_memory_extract_at" not in st.session_state:
+    st.session_state.last_memory_extract_at = 0
 
 # 2. Restore from localStorage BEFORE rendering any widgets
 if "storage_loaded" not in st.session_state:
@@ -2119,6 +2231,7 @@ else:
                 "profile", "zodiac", "messages", "opening_generated",
                 "cached_pages", "relationships", "current_page", "mbti",
                 "career", "_career_editing", "journal", "oracle_history",
+                "user_notes", "last_memory_extract_at",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
