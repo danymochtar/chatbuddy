@@ -131,6 +131,31 @@ TEXTS = {
     "nav_career": {"id": "Karir", "en": "Career"},
     "nav_relationship": {"id": "Relationship", "en": "Relationship"},
     "nav_reflection": {"id": "Refleksi", "en": "Reflection"},
+    "nav_oracle": {"id": "Tanya Oracle", "en": "Ask Oracle"},
+    "oracle_header": {"id": "🔮 Tanya Oracle", "en": "🔮 Ask Oracle"},
+    "oracle_caption": {
+        "id": "Pertanyaan yang lagi ngeganggu lo. Jangan filter — tanyain. Oracle bakal baca pola dari energi hari ini + karakter lo, balikin jawaban yang langsung, bukan hedge.",
+        "en": "Whatever's nagging at you — ask. The oracle reads patterns from today's energy + your character, and gives you a direct reply, not a hedge.",
+    },
+    "oracle_q_label": {"id": "Pertanyaan lo", "en": "Your question"},
+    "oracle_q_ph": {
+        "id": "Contoh: 'Gw terima offer kerja itu?', 'Dia serius sama gw?', 'Sekarang waktunya pindah?'",
+        "en": "E.g. 'Should I take that job offer?', 'Is he serious about me?', 'Is now the time to move?'",
+    },
+    "oracle_ask": {"id": "Tanya →", "en": "Ask →"},
+    "oracle_err": {
+        "id": "Tulis pertanyaan lo dulu ya 🙏",
+        "en": "Type your question first 🙏",
+    },
+    "oracle_loading": {
+        "id": "Oracle lagi baca polanya...",
+        "en": "The oracle is reading your patterns...",
+    },
+    "oracle_empty": {
+        "id": "Belum ada pertanyaan. Yang lagi ngeganjel di kepala lo — tanyain aja.",
+        "en": "No questions yet. Whatever's weighing on your mind — just ask.",
+    },
+    "oracle_history_header": {"id": "📖 Riwayat pertanyaan", "en": "📖 Past questions"},
     "reflection_header": {"id": "📝 Refleksi", "en": "📝 Reflection"},
     "reflection_caption": {
         "id": "Pertanyaan refleksi yang di-tailor ke karakter lo + fase yang lagi lo jalanin. Jawabannya bisa lo simpen jadi jurnal.",
@@ -312,6 +337,7 @@ def _flush_storage_if_dirty() -> None:
             "mbti": st.session_state.get("mbti"),
             "career": st.session_state.get("career"),
             "journal": st.session_state.get("journal", []),
+            "oracle_history": st.session_state.get("oracle_history", []),
         }
         ls.setItem(STORAGE_KEY, json.dumps(data), key="save_session")
     except Exception:
@@ -340,6 +366,7 @@ def load_session_from_storage() -> bool:
         st.session_state.mbti = data.get("mbti")
         st.session_state.career = data.get("career")
         st.session_state.journal = data.get("journal", [])
+        st.session_state.oracle_history = data.get("oracle_history", [])
 
         # Backfill fields added after older sessions were first saved.
         profile = st.session_state.profile
@@ -1289,6 +1316,78 @@ def career_prompt(career: dict) -> str:
     )
 
 
+def oracle_prompt(question: str) -> str:
+    return (
+        f"User tanya pertanyaan ke Oracle: _\"{question}\"_\n\n"
+        "Kasih jawaban **oracle** — bukan therapy, bukan textbook, bukan hedge "
+        "berlebihan. Format:\n\n"
+        "**Baris pertama**: verdict 1-3 kata yang langsung, pake bold. Contoh valid:\n"
+        "- **Ya** · **Tidak** · **Belum saatnya** · **Lebih cepat lebih baik**\n"
+        "- **Masih abu-abu** · **Jangan** · **Pelan-pelan** · **Sekarang**\n\n"
+        "Lalu 1-2 paragraf pendek — jelasin kenapa. Baca dari:\n"
+        "- Energi hari ini (Personal Day reduced = backbone, plus master kalo ada)\n"
+        "- Karakter user (Soul Urge + misi hidup + bakat)\n"
+        "- Fase hidup yang lagi dijalanin\n"
+        "Tunjukin **pola yang lo liat**, bukan opini. Lo baca, lo observe, lo bilang apa "
+        "yg muncul. Angka dalam kurung sparingly kalo relevan.\n\n"
+        "Tutup dengan 1 kalimat actionable — satu langkah kecil yg bisa diambil sekarang "
+        "ATAU satu red flag yg perlu diperhatikan. Sign-off `— Supernova`.\n\n"
+        "Tone: direct, hangat, sedikit misterius. Bukan guru. Bukan coach. _Oracle_. "
+        "**Zero istilah teknis numerologi / astrologi / MBTI** — semua blend ke observasi."
+    )
+
+
+def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
+    st.header(t("oracle_header"))
+    st.caption(t("oracle_caption"))
+
+    with st.form("oracle_form", clear_on_submit=True):
+        q = st.text_input(t("oracle_q_label"), placeholder=t("oracle_q_ph"))
+        ask = st.form_submit_button(t("oracle_ask"), use_container_width=True)
+    if ask:
+        q_clean = _sanitize(q, 500)
+        if not q_clean:
+            st.error(t("oracle_err"))
+        else:
+            with st.spinner(t("oracle_loading")):
+                placeholder = st.empty()
+                answer = stream_assistant(
+                    messages_for_api=[{"role": "user", "content": oracle_prompt(q_clean)}],
+                    system=system_prompt(profile, zodiac, today_local()),
+                    placeholder=placeholder,
+                )
+            if answer:
+                history = st.session_state.get("oracle_history", [])
+                history.append({
+                    "id": datetime.now().strftime("o_%Y%m%d%H%M%S%f"),
+                    "question": q_clean,
+                    "answer": answer,
+                    "created_at": datetime.now().isoformat(),
+                })
+                st.session_state.oracle_history = history
+                save_session_to_storage()
+                st.rerun()
+
+    history = st.session_state.get("oracle_history") or []
+    if not history:
+        st.info(t("oracle_empty"))
+        return
+
+    st.markdown(f"### {t('oracle_history_header')}")
+    for entry in reversed(history[-15:]):
+        with st.container(border=True):
+            header_cols = st.columns([5, 1])
+            header_cols[0].caption(entry["created_at"][:10])
+            if header_cols[1].button("🗑️", key=f"del_o_{entry['id']}"):
+                st.session_state.oracle_history = [
+                    e for e in history if e["id"] != entry["id"]
+                ]
+                save_session_to_storage()
+                st.rerun()
+            st.markdown(f"**❓ {entry['question']}**")
+            st.markdown(entry["answer"])
+
+
 def reflection_prompt() -> str:
     return (
         "User buka page Refleksi. Kasih mereka **3 pertanyaan refleksi** yang "
@@ -1809,6 +1908,8 @@ if "career" not in st.session_state:
     st.session_state.career = None
 if "journal" not in st.session_state:
     st.session_state.journal = []
+if "oracle_history" not in st.session_state:
+    st.session_state.oracle_history = []
 
 # 2. Restore from localStorage BEFORE rendering any widgets
 if "storage_loaded" not in st.session_state:
@@ -1992,6 +2093,7 @@ else:
             ("💼", t("nav_career"), "career"),
             ("💑", t("nav_relationship"), "relationship"),
             ("📝", t("nav_reflection"), "reflection"),
+            ("🔮", t("nav_oracle"), "oracle"),
             ("🗓️", t("nav_arah"), "arah"),
             ("♈", t("nav_zodiak"), "zodiak"),
             ("🐉", t("nav_shio"), "shio"),
@@ -2016,7 +2118,7 @@ else:
             for key in [
                 "profile", "zodiac", "messages", "opening_generated",
                 "cached_pages", "relationships", "current_page", "mbti",
-                "career", "_career_editing", "journal",
+                "career", "_career_editing", "journal", "oracle_history",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
@@ -2139,6 +2241,9 @@ else:
 
     elif page == "reflection":
         render_reflection_page(profile, zodiac)
+
+    elif page == "oracle":
+        render_oracle_page(profile, zodiac)
 
     handle_chat_turn(profile, zodiac)
 
