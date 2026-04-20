@@ -270,7 +270,7 @@ def geocode_city(city_name: str) -> Optional[tuple[float, float]]:
         return INDONESIA_CITIES[key]
     try:
         from geopy.geocoders import Nominatim
-        geolocator = Nominatim(user_agent="chatbuddy-numerology")
+        geolocator = Nominatim(user_agent="supernova-numerology")
         loc = geolocator.geocode(city_name, timeout=5)
         if loc:
             return (loc.latitude, loc.longitude)

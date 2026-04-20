@@ -80,8 +80,8 @@ TEXTS = {
         "en": "Leave blank to use first name",
     },
     "nick_help": {
-        "id": "Ini yg ChatBuddy pakai buat sapa lo",
-        "en": "ChatBuddy will call you by this",
+        "id": "Ini yang Supernova pakai buat sapa lo",
+        "en": "This is what Supernova calls you",
     },
     "dob_label": {"id": "Tanggal lahir", "en": "Date of birth"},
     "time_label": {
@@ -711,53 +711,70 @@ def daily_block(profile: dict, today: date) -> str:
     pasaran = current_pasaran(today)
     moon = current_moon_sign(today)
 
-    all_numbers = [py["notation"], pm["notation"], pd["notation"], str(ud)]
-    if master_hits:
-        all_numbers.append(f"master: {', '.join(str(m) for m in master_hits)}")
-
+    # Narrative context for the model — hierarchy:
+    #   1. Personal Day (reduced)   → vibration utama hari ini
+    #   2. Personal Day (unreduced) → flavor mentahnya
+    #   3. Master number (if any)   → emphasis spiritual
+    #   4. Personal Month           → texture bulan
+    #   5. Universal Day            → texture kolektif
+    #   + pasaran + moon as subtle invisible layers
     lines = [
-        f"=== VIBE HARI INI ({format_today_id(today)}) ===",
-        f"Sistem: Hans Decoz (World Numerology) — DOB {profile['dob']} × today {today.isoformat()}",
-        f"Angka-angka yang muncul: {', '.join(all_numbers)}",
+        f"## KONTEKS HARI INI ({format_today_id(today)})",
         "",
-        f"**Personal Year** = {py['notation']} ({py['reduced']}): {YEAR_THEMES[py['reduced']]}",
-        f"  → Tema besar tahun {today.year}. Pelajaran & peluang utama.",
+        "Ini catatan gw soal vibe user hari ini. Hierarki — paling tebel ke paling halus:",
         "",
-        f"**Personal Month** = {pm['notation']} ({pm['reduced']}): {MONTH_THEMES[pm['reduced']]}",
-        f"  → Tone bulan {today.strftime('%B')}. Nge-shape keputusan/aksi 30 hari ini.",
+        f"🔑 **Vibration utama (Personal Day reduced)** = **{pd['reduced']}**",
+        f"   {DAILY_VIBES[pd['reduced']]}",
+        f"   Ini mood & energi dominan hari ini — paragraf utama Vibe Hari Ini harus "
+        f"berangkat dari sini.",
         "",
-        f"**Personal Day (reduced)** = {pd['reduced']}: {DAILY_VIBES[pd['reduced']]}",
-        f"  → Vibration utama hari ini. Mood & energi dominan.",
-        "",
-        f"**Personal Day (unreduced notation)** = {pd['notation']} (raw {pd['raw']}) "
-        f"→ 'flavor' sebelum direduksi. Angka raw {pd['raw']} ngasih nuansa tambahan "
-        f"(komponen angkanya: dari {MEANINGS.get(pd['raw'] if pd['raw'] <= 9 else reduce_one(pd['raw']), '')}).",
+        f"✨ **Personal Day unreduced (raw)** = **{pd['notation']}** (raw sum {pd['raw']})",
+        f"   Angka mentahnya bilang ada nuansa tambahan sebelum direduksi. Kalo notation "
+        f"beda dari reduced ({pd['notation']} ≠ {pd['reduced']}), selipin sebagai flavor. "
+        f"Kalo sama, ga usah dipaksain.",
         "",
     ]
     if master_hits:
         lines += [
-            f"**Master numbers yang muncul**: {', '.join(str(m) for m in master_hits)}",
+            f"🌟 **Master number muncul**: {', '.join(str(m) for m in master_hits)}",
         ]
         for m in master_hits:
-            lines.append(f"  → {m}: {MEANINGS[m]} (layer spiritual/intuitif elevated)")
+            lines.append(
+                f"   {m}: {MEANINGS[m]} — layer spiritual/intuitif elevated. "
+                f"Kasih emphasis halus."
+            )
         lines.append("")
+    else:
+        lines += [
+            "🌟 Master number: ga ada di chain hari ini (ga perlu disebut).",
+            "",
+        ]
     lines += [
-        f"**Universal Day** = {ud}: {DAILY_VIBES[ud]}",
-        f"  → Energi kolektif hari ini — yang semua orang share, konteks di luar personal.",
+        f"🌓 **Personal Month** = {pm['notation']} ({pm['reduced']})",
+        f"   {MONTH_THEMES[pm['reduced']]}",
+        f"   Texture bulan ini — blend halus ke Vibe Hari Ini.",
         "",
-        "-- Lapisan invisible tambahan (untuk texture, JANGAN SEBUT LABEL) --",
+        f"🌍 **Universal Day** = {ud}",
+        f"   {DAILY_VIBES[ud]}",
+        f"   Energi kolektif yang semua orang share hari ini — texture background.",
+        "",
+        f"📆 **Personal Year** (tahun {today.year}) = {py['notation']} ({py['reduced']})",
+        f"   {YEAR_THEMES[py['reduced']]}",
+        f"   Backdrop besar — boleh disinggung sekilas, tapi bukan fokus di Vibe Hari Ini.",
+        "",
+        "-- Lapisan invisible (untuk texture, JANGAN pernah sebut label) --",
         f"Pasaran Jawa ({pasaran['name']}): {pasaran['traits']}",
     ]
     if moon:
         lines.append(f"Moon position ({moon}): {SIGN_TRAITS[moon]}")
+    lines += [
+        "",
+        "**Cara pakai**: saat nulis Vibe Hari Ini di Beranda, **PD reduced adalah tulang "
+        "punggung** narasi — tulis dari sana. PD unreduced & master kasih flavor/emphasis "
+        "di kalimat yg sama atau berikutnya. PM + UD jadi 1 kalimat texture kolektif/"
+        "bulan. Pasaran + moon blend halus, ga pernah di-label.",
+    ]
     return "\n".join(lines)
-
-
-def reduce_one(n: int) -> int:
-    # single reduction step helper for display
-    while n > 9:
-        n = sum(int(d) for d in str(n))
-    return n
 
 
 def temporal_anchor(today: date) -> str:
@@ -890,28 +907,30 @@ def opening_prompt() -> str:
         "```\n\n"
         "Tanpa attribution. Tanpa prefix 'kamu unik karena...'. Just the quote.\n\n"
         "## 🌞 Vibe Hari Ini\n"
-        "Fokus utama: **energi hari ini**. Tema tahun (PY) dan bulan (PM) boleh muncul tapi "
-        "**di-blend jadi texture**, bukan section terpisah atau label obvious. Contoh blend "
-        "yang natural: _\"hari yang introspektif (7), di tengah bulan yang lagi fleksibel (5) "
-        "dan tahun yang pas buat fondasi baru (19/1)\"_ — mengalir, bukan bullet.\n\n"
+        "**Hierarki vibration** yang harus lo ikutin (tulang punggung → ke texture halus):\n"
+        "1. **Personal Day (reduced)** = tulang punggung narasi, energi dominan hari ini.\n"
+        "2. **Personal Day (unreduced)** = flavor mentahnya, selipin kalo notation beda "
+        "dari reduced.\n"
+        "3. **Master number** (kalo ada di chain) = emphasis halus, intuisi spiritual elevated.\n"
+        "4. **Personal Month** = texture bulan, 1 kalimat blend.\n"
+        "5. **Universal Day** = texture kolektif, 1 kalimat blend.\n\n"
+        "Contoh tone yang natural (JANGAN copy persis):\n"
+        "_\"Hari yang introspektif banget buat lo (7), ada flavor mentah 25/7 yang bikin "
+        "refleksi hari ini kerasa lebih dalem. Di tengah bulan yang lagi fleksibel (5), "
+        "suasana kolektif juga lagi di titik introspektif serupa — ga cuma lo yg berasa.\"_\n\n"
         "Struktur:\n"
         "- Sebutin hari & tanggal singkat (contoh: 'Minggu, 20 April').\n"
-        "- **1-2 paragraf pendek** — **energi hari ini paling tebal**, PY+PM jadi context "
-        "halus di kalimat yang sama atau berikutnya. Angka dalam kurung OK sebagai highlight, "
-        "contoh _\"(7)\"_, _\"(19/1)\"_, _\"(5)\"_. Boleh sebut nuansa raw kalo menarik "
-        "(contoh _\"25/7\"_).\n"
-        "- **3-4 tips praktis** (bullet) — aksi konkret hari ini buat kerja / relationship / "
-        "decision. Spesifik, bukan 'be yourself'.\n\n"
+        "- **1-2 paragraf pendek** — buka dari PD reduced sebagai fondasi, layering PD "
+        "unreduced / master / PM / UD di kalimat-kalimat berikutnya. Angka dalam kurung "
+        "sebagai highlight (contoh _(7)_, _(25/7)_, _(11)_ untuk master).\n"
+        "- **3-4 tips praktis** (bullet) — aksi konkret buat kerja / relationship / decision. "
+        "Spesifik, bukan 'be yourself'.\n\n"
         "LARANGAN:\n"
-        "- ❌ JANGAN sebut 'Personal Year', 'Personal Month', 'Personal Day' sebagai label "
-        "teknis. Blend aja.\n"
-        "- ❌ JANGAN sebut 'Sistem Hans Decoz' / 'World Numerology' / 'Universal Day' / "
-        "'pasaran' / 'moon' / 'rasi'.\n"
+        "- ❌ JANGAN sebut 'Personal Day', 'Personal Month', 'Universal Day', 'Sistem Hans "
+        "Decoz', 'pasaran', 'moon', 'rasi' sebagai label teknis.\n"
         "- ✅ Angka di kurung OK sebagai highlight halus.\n"
-        "- ✅ PY & PM boleh muncul sebagai **texture** konteks bulan/tahun yg bikin hari "
-        "ini kerasa gimana.\n\n"
-        "Kalo ada **master number** (11/22/33) di angka hari ini, emphasis halus ('hari ini "
-        "intuisi lo tajem banget (11)') — ga perlu section sendiri.\n\n"
+        "- ✅ Master number kalo ada, emphasis halus ('intuisi lo lagi tajem banget (11)') — "
+        "bukan section sendiri.\n\n"
         "## 💬 Ngobrol Yuk\n"
         "1-2 kalimat singkat — undang user share apa yg lagi ada di kepala. Kasih tau kalau "
         "ada refleksi lebih dalem di menu sidebar.\n\n"
