@@ -73,9 +73,14 @@ def personal_month(dob: date, today: date) -> int:
 
 
 def personal_day(dob: date, today: date) -> int:
+    # Hans Decoz: daily vibration is ALWAYS fully reduced to 1-9. Master
+    # numbers can appear as intermediates in the chain (captured in
+    # personal_cycles_full) but the day's primary energy is single digit.
     pm = personal_month(dob, today)
-    cd = reduce_number(today.day)
-    return reduce_number(pm + cd)
+    n = pm + today.day
+    while n > 9:
+        n = sum(int(d) for d in str(n))
+    return n
 
 
 def universal_day(today: date) -> int:
@@ -83,37 +88,79 @@ def universal_day(today: date) -> int:
     return reduce_number(sum(digits))
 
 
+def _reduce_stop_at_master(raw: int) -> tuple[str, int]:
+    """Reduce until single digit OR master number, preserving master.
+    Returns (notation, final). Notation shows raw/final or just final if same.
+    """
+    n = raw
+    while n > 9 and n not in MASTER_NUMBERS:
+        n = sum(int(d) for d in str(n))
+    if raw == n:
+        return str(n), n
+    return f"{raw}/{n}", n
+
+
+def _reduce_full_with_chain(raw: int) -> tuple[str, int, list[int]]:
+    """Reduce ALL the way to single digit (1-9). Chain tracks master
+    intermediates so notation can show them. Used for Personal Day where
+    the daily vibration is always single-digit but master intermediates
+    add flavor.
+
+    Returns (notation, final_single_digit, master_intermediates).
+    Notation format examples: '29/11/2', '25/7', '7'.
+    """
+    chain = [raw]
+    n = raw
+    while n > 9:
+        n = sum(int(d) for d in str(n))
+        chain.append(n)
+    final = chain[-1]
+    masters = [x for x in chain if x in MASTER_NUMBERS]
+    parts = [chain[0]]
+    for mid in chain[1:-1]:
+        if mid in MASTER_NUMBERS:
+            parts.append(mid)
+    parts.append(final)
+    if len(parts) == 2 and parts[0] == parts[1]:
+        return str(final), final, masters
+    return "/".join(str(p) for p in parts), final, masters
+
+
 def personal_cycles_full(dob: date, today: date) -> dict:
-    """Returns Personal Year/Month/Day with both raw sum and reduced value,
-    plus notation (e.g. '25/7' or just '7' if already single/master).
+    """Hans Decoz personal cycles for the given dob at the given today.
+
+    - Personal Year uses TODAY's year (Universal Year), not the birth year.
+    - Personal Year & Personal Month: master numbers PRESERVED (big-picture
+      cycles where master matters).
+    - Personal Day: FULLY reduced to 1-9 — master intermediates recorded
+      in the chain + notation, but the vibration for the day is always
+      single digit (e.g. 29 → 11 → 2).
     """
     bm = reduce_number(dob.month)
     bd = reduce_number(dob.day)
-    cy = reduce_number(digit_sum(dob.year))
+    cy = reduce_number(digit_sum(today.year))
 
     py_raw = bm + bd + cy
-    py_reduced = reduce_number(py_raw)
+    py_notation, py_reduced = _reduce_stop_at_master(py_raw)
 
     cm = reduce_number(today.month)
     pm_raw = py_reduced + cm
-    pm_reduced = reduce_number(pm_raw)
+    pm_notation, pm_reduced = _reduce_stop_at_master(pm_raw)
 
     pd_raw = pm_reduced + today.day
-    pd_reduced = reduce_number(pd_raw)
+    pd_notation, pd_reduced, pd_masters = _reduce_full_with_chain(pd_raw)
 
-    def notation(raw, reduced):
-        if raw == reduced:
-            return str(reduced)
-        return f"{raw}/{reduced}"
-
-    all_values = {py_raw, py_reduced, pm_raw, pm_reduced, pd_raw, pd_reduced}
-    master_hits = sorted(MASTER_NUMBERS & all_values)
+    all_masters = set(pd_masters)
+    if py_reduced in MASTER_NUMBERS:
+        all_masters.add(py_reduced)
+    if pm_reduced in MASTER_NUMBERS:
+        all_masters.add(pm_reduced)
 
     return {
-        "py": {"raw": py_raw, "reduced": py_reduced, "notation": notation(py_raw, py_reduced)},
-        "pm": {"raw": pm_raw, "reduced": pm_reduced, "notation": notation(pm_raw, pm_reduced)},
-        "pd": {"raw": pd_raw, "reduced": pd_reduced, "notation": notation(pd_raw, pd_reduced)},
-        "master_numbers": master_hits,
+        "py": {"raw": py_raw, "reduced": py_reduced, "notation": py_notation},
+        "pm": {"raw": pm_raw, "reduced": pm_reduced, "notation": pm_notation},
+        "pd": {"raw": pd_raw, "reduced": pd_reduced, "notation": pd_notation},
+        "master_numbers": sorted(all_masters),
     }
 
 
