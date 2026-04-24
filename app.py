@@ -7,15 +7,22 @@ import streamlit as st
 
 from numerology import (
     ARCHETYPES,
+    BRIDGE_MEANINGS,
+    CHALLENGE_MEANINGS,
     DAILY_VIBES,
+    ESSENCE_MEANINGS,
     KARMIC_DEBT_MEANINGS,
     KARMIC_DEBT_SHORT,
     LESSON_MEANINGS,
     LESSON_SHORT,
-    PINNACLE_MEANINGS,
-    CHALLENGE_MEANINGS,
+    LETTER_MEANINGS,
     MEANINGS,
     MONTH_THEMES,
+    PERIOD_CYCLE_MEANINGS,
+    PINNACLE_MEANINGS,
+    PLANE_MEANINGS,
+    SUBCONSCIOUS_SELF_MEANINGS,
+    TRANSIT_LAYER_MEANINGS,
     YEAR_THEMES,
     build_profile,
     personal_cycles_full,
@@ -394,6 +401,9 @@ def load_session_from_storage() -> bool:
                         personal_month as _pm,
                         personal_day as _pd,
                         current_pinnacle_challenge as _cpc,
+                        current_period_cycle as _cpcyc,
+                        transits as _transits,
+                        essence as _essence,
                         YEAR_THEMES as _YT,
                         MONTH_THEMES as _MT,
                         DAILY_VIBES as _DV,
@@ -403,6 +413,16 @@ def load_session_from_storage() -> bool:
                     profile["personal_month"] = _pm(dob, current_today)
                     profile["personal_day"] = _pd(dob, current_today)
                     profile["current_phase"] = _cpc(dob, current_today)
+                    profile["age"] = (current_today - dob).days // 365
+                    if profile["age"] >= 50:
+                        profile["maturity_phase"] = "active"
+                    elif profile["age"] >= 35:
+                        profile["maturity_phase"] = "emerging"
+                    else:
+                        profile["maturity_phase"] = "latent"
+                    profile["period_now"] = _cpcyc(dob, current_today)
+                    profile["transits"] = _transits(profile["full_name"], dob, current_today)
+                    profile["essence"] = _essence(profile["full_name"], dob, current_today)
                     profile.setdefault("meanings", {})
                     profile["meanings"]["personal_year"] = _YT[profile["personal_year"]]
                     profile["meanings"]["personal_month"] = _MT[profile["personal_month"]]
@@ -431,8 +451,15 @@ def load_session_from_storage() -> bool:
                 migrated = True
                 st.session_state.cached_pages.pop("weton", None)
 
-        if "balance" not in profile or "rational_thought" not in profile \
-                or "pinnacles" not in profile:
+        needs_decoz_extras = any(
+            key not in profile
+            for key in (
+                "balance", "rational_thought", "pinnacles", "subconscious_self",
+                "cornerstone", "planes", "bridges", "transits", "essence",
+                "period_now", "maturity_phase", "info",
+            )
+        )
+        if needs_decoz_extras:
             try:
                 today = today_local()
                 nickname = profile.get("nickname")
@@ -442,7 +469,10 @@ def load_session_from_storage() -> bool:
                 for key in (
                     "balance", "rational_thought", "pinnacles", "challenges",
                     "current_phase", "karmic_debts", "karmic_lessons",
-                    "hidden_passion", "maturity",
+                    "hidden_passion", "maturity", "subconscious_self",
+                    "cornerstone", "capstone", "first_vowel", "planes",
+                    "bridges", "transits", "essence", "period_now",
+                    "maturity_phase", "age", "info",
                 ):
                     if key in fresh and key not in profile:
                         profile[key] = fresh[key]
@@ -673,9 +703,103 @@ def profile_block(profile: dict, zodiac: dict | None) -> str:
             f"Rational thought (gaya proses mental / cara berpikir): {rational} "
             f"({ARCHETYPES[rational]}) — {profile['meanings']['rational_thought']}"
         )
+    # Maturity activation hint — Decoz says maturity number emerges late 30s
+    # and becomes primary energy after ~age 50. Annotate so the AI reads
+    # the right "weight" of this number for the user's current age.
+    age_now = profile.get("age")
+    mphase = profile.get("maturity_phase")
+    if mphase and profile.get("maturity"):
+        mphase_label = {
+            "latent": "belum aktif (umur < 35)",
+            "emerging": "mulai muncul (umur 35-49) — energi maturity udah kebaca tapi belum dominan",
+            "active": "aktif (umur 50+) — energi maturity udah jadi tone utama",
+        }.get(mphase, mphase)
+        minor_lines.append(f"Status maturity number: {mphase_label}")
+
+    # Subconscious self — confidence under surprise situations
+    sub_self = profile.get("subconscious_self")
+    if sub_self:
+        minor_lines.append(
+            f"Subconscious self {sub_self}: {SUBCONSCIOUS_SELF_MEANINGS.get(sub_self, '')}"
+        )
+
+    # Cornerstone / Capstone / First Vowel — letter-level signatures
+    cs = profile.get("cornerstone")
+    cap = profile.get("capstone")
+    fv = profile.get("first_vowel")
+    if cs:
+        minor_lines.append(
+            f"Cornerstone (huruf pertama nama depan, cara approach masalah/kesempatan): "
+            f"'{cs}' — {LETTER_MEANINGS.get(cs, '')}"
+        )
+    if cap:
+        minor_lines.append(
+            f"Capstone (huruf terakhir nama depan, cara nyelesaiin sesuatu): "
+            f"'{cap}' — {LETTER_MEANINGS.get(cap, '')}"
+        )
+    if fv and fv != cs:
+        minor_lines.append(
+            f"First vowel (motif tersembunyi di balik nama depan): "
+            f"'{fv}' — {LETTER_MEANINGS.get(fv, '')}"
+        )
+
+    # Planes of Expression — dominant inner orientation
+    planes = profile.get("planes") or {}
+    dominant = planes.get("dominant")
+    if dominant:
+        minor_lines.append(
+            f"Plane of Expression dominan: {dominant} — "
+            f"{PLANE_MEANINGS.get(dominant, '')}"
+        )
+
+    # Bridges — gaps to close between core numbers
+    bridges_data = profile.get("bridges") or {}
+    bridge_lp_ex = bridges_data.get("life_path_expression")
+    bridge_su_pe = bridges_data.get("soul_urge_personality")
+    if bridge_lp_ex is not None:
+        minor_lines.append(
+            f"Bridge misi-bakat ({bridge_lp_ex}): {BRIDGE_MEANINGS.get(bridge_lp_ex, '')}"
+        )
+    if bridge_su_pe is not None:
+        minor_lines.append(
+            f"Bridge hati-aura ({bridge_su_pe}): {BRIDGE_MEANINGS.get(bridge_su_pe, '')}"
+        )
+
     if minor_lines:
         lines += ["", "-- Minor aspects (buat kedalaman; blend halus saat relevan) --"]
         lines += minor_lines
+
+    # Current essence + transits — what flavor the year carries
+    ess = profile.get("essence") or {}
+    transit = profile.get("transits") or {}
+    period_now = profile.get("period_now") or {}
+    if ess.get("final") or transit.get("physical") or transit.get("spiritual"):
+        lines += ["", "-- Vibe tahun ini (Decoz transits & essence; blend halus, jangan sebut istilah teknis) --"]
+        if ess.get("final"):
+            ess_meaning = ESSENCE_MEANINGS.get(ess["final"], "")
+            karmic_extra = ""
+            if ess.get("karmic_debts"):
+                kd = ess["karmic_debts"][0]
+                karmic_extra = f" (lewat karmic debt {kd}: {KARMIC_DEBT_MEANINGS.get(kd, '')})"
+            lines.append(
+                f"Essence tahun ini: {ess['notation']} — {ess_meaning}{karmic_extra}"
+            )
+        for layer in ("physical", "mental", "spiritual"):
+            t_info = transit.get(layer)
+            if t_info:
+                lines.append(
+                    f"Transit {layer}: huruf '{t_info['letter']}' (nilai {t_info['value']}, "
+                    f"tahun ke-{t_info['year_in_letter']} dari {t_info['value']}) — "
+                    f"{LETTER_MEANINGS.get(t_info['letter'], '')}. "
+                    f"{TRANSIT_LAYER_MEANINGS.get(layer, '')}"
+                )
+        if period_now.get("number"):
+            pn = period_now["number"]
+            lines.append(
+                f"Babak hidup sekarang (Period Cycle {period_now['period']}, "
+                f"umur {period_now['start_age']}-{period_now.get('end_age') or 'seterusnya'}): "
+                f"angka {pn} — {PERIOD_CYCLE_MEANINGS.get(pn, '')}"
+            )
 
     # Life phases (pinnacles & challenges)
     current = profile.get("current_phase") or {}
