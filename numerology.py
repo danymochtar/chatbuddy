@@ -124,16 +124,64 @@ def letters_sum(name: str, only_vowels: bool = False, only_consonants: bool = Fa
     return reduce_number(total)
 
 
+def _name_words(full_name: str) -> list[str]:
+    """Split full name into individual word components, uppercased,
+    keeping only words that contain any letters."""
+    return [w for w in full_name.upper().split() if any(c in PYTHAGOREAN for c in w)]
+
+
+def _word_letter_sum(word: str, only_vowels: bool = False, only_consonants: bool = False) -> int:
+    total = 0
+    for ch in word:
+        if ch not in PYTHAGOREAN:
+            continue
+        if only_vowels and ch not in VOWELS:
+            continue
+        if only_consonants and ch in VOWELS:
+            continue
+        total += PYTHAGOREAN[ch]
+    return total
+
+
+def _name_full(full_name: str, *, only_vowels: bool = False, only_consonants: bool = False) -> dict:
+    """Hans Decoz: reduce each name (first/middle/last) separately, then
+    combine. Preserves master numbers + karmic debts that appear at
+    component level."""
+    words = _name_words(full_name)
+    per_word = []
+    for w in words:
+        raw = _word_letter_sum(w, only_vowels=only_vowels, only_consonants=only_consonants)
+        info = chain_info(raw, keep_master=True)
+        info["word"] = w
+        per_word.append(info)
+    total = sum(w["final"] for w in per_word)
+    overall = chain_info(total, keep_master=True)
+    overall["per_word"] = per_word
+    return overall
+
+
+def expression_full(full_name: str) -> dict:
+    return _name_full(full_name)
+
+
+def soul_urge_full(full_name: str) -> dict:
+    return _name_full(full_name, only_vowels=True)
+
+
+def personality_full(full_name: str) -> dict:
+    return _name_full(full_name, only_consonants=True)
+
+
 def expression_number(name: str) -> int:
-    return letters_sum(name)
+    return expression_full(name)["final"]
 
 
 def soul_urge_number(name: str) -> int:
-    return letters_sum(name, only_vowels=True)
+    return soul_urge_full(name)["final"]
 
 
 def personality_number(name: str) -> int:
-    return letters_sum(name, only_consonants=True)
+    return personality_full(name)["final"]
 
 
 def birthday_number(dob: date) -> int:
