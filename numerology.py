@@ -143,8 +143,15 @@ def personal_day(dob: date, today: date) -> int:
 
 
 def universal_day(today: date) -> int:
+    # Per Decoz: Universal Day & Personal Day are always 1-9 — master
+    # numbers do NOT stop the reduction.
     digits = [int(d) for d in today.strftime("%d%m%Y")]
-    return reduce_number(sum(digits))
+    return reduce_to_single(sum(digits))
+
+
+def universal_day_full(today: date) -> dict:
+    digits = [int(d) for d in today.strftime("%d%m%Y")]
+    return chain_info(sum(digits), keep_master=False)
 
 
 def _reduce_stop_at_master(raw: int) -> tuple[str, int]:
