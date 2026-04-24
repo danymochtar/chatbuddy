@@ -464,6 +464,28 @@ def karmic_lessons(name: str) -> list[int]:
     return sorted(set(range(1, 10)) - present)
 
 
+def bridge(num1: int, num2: int) -> int:
+    """Decoz Bridge = absolute difference between two reduced
+    single-digit forms of related core numbers. Range 0-8.
+    Master inputs are reduced to single digit first for subtraction."""
+    a = reduce_to_single(num1)
+    b = reduce_to_single(num2)
+    return abs(a - b)
+
+
+BRIDGE_MEANINGS = {
+    0: "Dua angka identik — energinya nyatu, ekspresi tunggal yang kuat. Risk: terlalu monoton, miss balance.",
+    1: "Develop independence, decisiveness, self-reliance. Berani jadi diri sendiri, ga tergantung suara orang.",
+    2: "Practice patience, cooperation, sensitivity ke tempo orang lain. Belajar lebih lembut, less direct.",
+    3: "Tambahin kreativitas, humor, self-expression — biar dua sisi lo sambungin lewat ekspresi.",
+    4: "Tambahin disiplin, struktur, follow-through — biar visi punya kaki dan ground.",
+    5: "Lebih fleksibel, willing to change, less afraid of risk — buat sambungin gap.",
+    6: "Take on more responsibility — terutama buat keluarga / komunitas. Tanggung jawab nyambungin gap.",
+    7: "Spend more time in study, contemplation, self-reflection. Inner work bridges the gap.",
+    8: "Work on relationship sama power, money, accomplishment. Material maturity bridges the gap.",
+}
+
+
 def cornerstone(full_name: str) -> str:
     """First letter of first name — how you approach opportunities & obstacles."""
     words = _name_words(full_name)
