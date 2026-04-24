@@ -240,6 +240,26 @@ TEXTS = {
     },
     "obsesi_label": {"id": "Obsesi tersembunyi", "en": "Hidden drive"},
     "versi_dewasa_label": {"id": "Versi dewasa lo", "en": "Mature version"},
+    "vibe_tahun_label": {"id": "✨ Vibe tahun ini", "en": "✨ This year's vibe"},
+    "essence_label": {"id": "Tema tahun (essence)", "en": "Year theme (essence)"},
+    "transit_label": {"id": "Transit huruf aktif", "en": "Active transit letters"},
+    "period_now_label": {"id": "Babak hidup sekarang", "en": "Current life chapter"},
+    "letters_label": {"id": "🔤 Tanda huruf nama depan", "en": "🔤 First-name letter signs"},
+    "cornerstone_label": {"id": "Cornerstone (huruf awal)", "en": "Cornerstone (first letter)"},
+    "capstone_label": {"id": "Capstone (huruf akhir)", "en": "Capstone (final letter)"},
+    "first_vowel_label": {"id": "First vowel (huruf vokal awal)", "en": "First vowel"},
+    "subconscious_label": {"id": "Bekal bawaan (subconscious self)", "en": "Inner toolkit (subconscious self)"},
+    "planes_label": {"id": "Plane dominan", "en": "Dominant plane"},
+    "bridges_label": {"id": "Jembatan antar angka", "en": "Bridges between numbers"},
+    "bridge_lp_ex_label": {"id": "Misi ↔ Bakat", "en": "Mission ↔ Talent"},
+    "bridge_su_pe_label": {"id": "Hati ↔ Aura", "en": "Heart ↔ Aura"},
+    "maturity_phase_label": {"id": "Status maturity", "en": "Maturity status"},
+    "maturity_phase_latent": {"id": "belum aktif", "en": "not yet active"},
+    "maturity_phase_emerging": {"id": "mulai muncul", "en": "emerging"},
+    "maturity_phase_active": {"id": "aktif", "en": "active"},
+    "transit_physical": {"id": "fisik", "en": "physical"},
+    "transit_mental": {"id": "mental", "en": "mental"},
+    "transit_spiritual": {"id": "spiritual", "en": "spiritual"},
     "reset": {"id": "Reset sesi", "en": "Reset session"},
     "storage_note": {
         "id": "💾 Sesi tersimpen di browser lo.",
@@ -2313,9 +2333,85 @@ else:
                 st.markdown(f"**{t('obsesi_label')}:** {names}")
             maturity = profile.get("maturity")
             if maturity:
+                phase_word = {
+                    "latent": t("maturity_phase_latent"),
+                    "emerging": t("maturity_phase_emerging"),
+                    "active": t("maturity_phase_active"),
+                }.get(profile.get("maturity_phase"), "")
+                phase_suffix = f" · _{phase_word}_" if phase_word else ""
                 st.markdown(
-                    f"**{t('versi_dewasa_label')}:** `{maturity}` · _{ARCHETYPES[maturity]}_"
+                    f"**{t('versi_dewasa_label')}:** `{maturity}` · "
+                    f"_{ARCHETYPES[maturity]}_{phase_suffix}"
                 )
+            sub_self = profile.get("subconscious_self")
+            if sub_self:
+                st.markdown(f"**{t('subconscious_label')}:** `{sub_self}`")
+            planes = profile.get("planes") or {}
+            dominant = planes.get("dominant")
+            if dominant:
+                st.markdown(f"**{t('planes_label')}:** _{dominant}_")
+            bridges_data = profile.get("bridges") or {}
+            bridge_lp_ex = bridges_data.get("life_path_expression")
+            bridge_su_pe = bridges_data.get("soul_urge_personality")
+            if bridge_lp_ex is not None or bridge_su_pe is not None:
+                st.markdown(f"**{t('bridges_label')}:**")
+                if bridge_lp_ex is not None:
+                    st.markdown(f"- {t('bridge_lp_ex_label')}: `{bridge_lp_ex}`")
+                if bridge_su_pe is not None:
+                    st.markdown(f"- {t('bridge_su_pe_label')}: `{bridge_su_pe}`")
+
+        cs = profile.get("cornerstone")
+        cap = profile.get("capstone")
+        fv = profile.get("first_vowel")
+        if cs or cap or fv:
+            with st.expander(t("letters_label")):
+                if cs:
+                    st.markdown(
+                        f"**{t('cornerstone_label')}:** `{cs}` · "
+                        f"_{LETTER_MEANINGS.get(cs, '')}_"
+                    )
+                if cap:
+                    st.markdown(
+                        f"**{t('capstone_label')}:** `{cap}` · "
+                        f"_{LETTER_MEANINGS.get(cap, '')}_"
+                    )
+                if fv and fv != cs:
+                    st.markdown(
+                        f"**{t('first_vowel_label')}:** `{fv}` · "
+                        f"_{LETTER_MEANINGS.get(fv, '')}_"
+                    )
+
+        ess = profile.get("essence") or {}
+        transit = profile.get("transits") or {}
+        period_now = profile.get("period_now") or {}
+        if ess.get("final") or transit.get("physical") or transit.get("spiritual"):
+            with st.expander(t("vibe_tahun_label")):
+                if ess.get("final"):
+                    ess_label = ARCHETYPES.get(ess["final"], "")
+                    st.markdown(
+                        f"**{t('essence_label')}:** `{ess['notation']}` · _{ess_label}_"
+                    )
+                transit_layers = []
+                for layer in ("physical", "mental", "spiritual"):
+                    info = transit.get(layer)
+                    if info:
+                        layer_word = t(f"transit_{layer}")
+                        transit_layers.append(
+                            f"- {layer_word}: `{info['letter']}` "
+                            f"(thn ke-{info['year_in_letter']}/{info['value']})"
+                        )
+                if transit_layers:
+                    st.markdown(f"**{t('transit_label')}:**")
+                    for tl in transit_layers:
+                        st.markdown(tl)
+                if period_now.get("number"):
+                    end_age = period_now.get("end_age")
+                    end_str = str(end_age) if end_age is not None else "∞"
+                    pn_label = ARCHETYPES.get(period_now["number"], "")
+                    st.markdown(
+                        f"**{t('period_now_label')}:** `{period_now['number']}` · "
+                        f"_{pn_label}_ (umur {period_now['start_age']}-{end_str})"
+                    )
 
         st.divider()
 
