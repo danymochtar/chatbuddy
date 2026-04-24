@@ -118,6 +118,14 @@ def birthday_number(dob: date) -> int:
     return reduce_number(dob.day)
 
 
+def birthday_full(dob: date) -> dict:
+    """Full Birth Day info — preserves the double digit so karmic debts
+    (13, 14, 16, 19) and master Birth Days (11, 22) surface naturally.
+    Day 22 stays 22 (master), day 13 reduces to 4 with karmic 13 in chain,
+    etc."""
+    return chain_info(dob.day, keep_master=True)
+
+
 def personal_year(dob: date, today: date) -> int:
     bm = reduce_number(dob.month)
     bd = reduce_number(dob.day)
