@@ -521,6 +521,65 @@ def rational_thought_full(full_name: str, dob: date) -> dict:
     return chain_info(raw, keep_master=True)
 
 
+def period_cycles(dob: date) -> list[dict]:
+    """Decoz Three Period Cycles — the three chapters of your Life Path.
+
+    - Period 1 = birth month (master preserved). From birth to the first
+      Personal Year 1 that lands on age ≥ 27.
+    - Period 2 = birth day (master preserved). Lasts 27 years.
+    - Period 3 = birth year reduced (master preserved). Rest of life.
+    """
+    bm = reduce_number(dob.month)
+    bd = reduce_number(dob.day)
+    by = reduce_number(digit_sum(dob.year))
+
+    # Locate the first Personal Year 1 that occurs on or after age 27.
+    transition_year: int | None = None
+    base_year = dob.year + 27
+    for y in range(base_year, base_year + 9):
+        uy = reduce_number(digit_sum(y))
+        py = reduce_number(bm + bd + uy)
+        if py == 1:
+            transition_year = y
+            break
+    if transition_year is None:
+        transition_year = base_year
+
+    p1_end_age = transition_year - dob.year
+
+    return [
+        {"period": 1, "number": bm, "start_age": 0, "end_age": p1_end_age},
+        {"period": 2, "number": bd, "start_age": p1_end_age + 1, "end_age": p1_end_age + 27},
+        {"period": 3, "number": by, "start_age": p1_end_age + 28, "end_age": None},
+    ]
+
+
+def current_period_cycle(dob: date, today: date) -> dict:
+    age = (today - dob).days // 365
+    cycles = period_cycles(dob)
+    for cyc in cycles:
+        end = cyc["end_age"] if cyc["end_age"] is not None else 999
+        if age <= end:
+            return {**cyc, "age": age}
+    return {**cycles[-1], "age": age}
+
+
+PERIOD_CYCLE_MEANINGS = {
+    1: "Babak inisiatif & jadi diri sendiri — fondasi self-direction.",
+    2: "Babak hubungan & sensitivity — belajar diplomasi & cooperation.",
+    3: "Babak ekspresi & sosial — kreativitas, comunication, joy of being seen.",
+    4: "Babak kerja keras & fondasi material — disiplin, building, security.",
+    5: "Babak perubahan & freedom — adventure, eksplorasi, banyak shift.",
+    6: "Babak tanggung jawab & care — keluarga, komitmen, healing orang.",
+    7: "Babak introspektif & wisdom — solo work, study, spiritual.",
+    8: "Babak power & material achievement — karir, pengaruh, autoritas.",
+    9: "Babak humanis & legacy — service, completion, lepas dari ego personal.",
+    11: "Babak master 11 — channeling intuisi, jadi inspirator.",
+    22: "Babak master 22 — building skala besar, monumen yg lasting.",
+    33: "Babak master 33 — service universal, kasih tanpa syarat.",
+}
+
+
 def _first_pinnacle_end_age(lp: int) -> int:
     lp_reduced = lp if lp not in MASTER_NUMBERS else reduce_number(lp // 10 + lp % 10)
     return 36 - lp_reduced
