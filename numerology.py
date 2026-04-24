@@ -607,14 +607,26 @@ def build_profile(
     nickname: str | None = None,
 ) -> dict:
     today = today or today_local()
-    lp = life_path(dob)
-    ex = expression_number(full_name)
-    su = soul_urge_number(full_name)
-    pe = personality_number(full_name)
-    bd = birthday_number(dob)
+
+    lp_info = life_path_full(dob)
+    ex_info = expression_full(full_name)
+    su_info = soul_urge_full(full_name)
+    pe_info = personality_full(full_name)
+    bd_info = birthday_full(dob)
+    rt_info = rational_thought_full(full_name, dob)
+    ud_info = universal_day_full(today)
+
+    lp = lp_info["final"]
+    ex = ex_info["final"]
+    su = su_info["final"]
+    pe = pe_info["final"]
+    bd = bd_info["final"]
+    rational = rt_info["final"]
+
     py = personal_year(dob, today)
     pm = personal_month(dob, today)
     pd = personal_day(dob, today)
+
     debts = {
         "life_path": life_path_karmic(dob),
         "expression": expression_karmic(full_name),
@@ -625,24 +637,27 @@ def build_profile(
     passion = hidden_passion(full_name)
     maturity = maturity_number(lp, ex)
     balance = balance_number(full_name)
-    rational = rational_thought(bd, ex)
     pins = pinnacles(dob)
     chals = challenges(dob)
     current = current_pinnacle_challenge(dob, today)
     nick = (nickname or "").strip() or full_name.strip().split()[0]
+
     return {
         "full_name": full_name,
         "nickname": nick,
         "dob": dob.isoformat(),
         "today": today.isoformat(),
+        # Core numbers — final value (master-preserved where Decoz says so)
         "life_path": lp,
         "expression": ex,
         "soul_urge": su,
         "personality": pe,
         "birthday": bd,
+        # Cycles
         "personal_year": py,
         "personal_month": pm,
         "personal_day": pd,
+        # Karmic + supporting
         "karmic_debts": debts,
         "karmic_lessons": lessons,
         "hidden_passion": passion,
@@ -652,12 +667,22 @@ def build_profile(
         "pinnacles": pins,
         "challenges": chals,
         "current_phase": current,
+        # Rich chain_info dicts (notation, components, masters, karmic intermediates)
+        "info": {
+            "life_path": lp_info,
+            "expression": ex_info,
+            "soul_urge": su_info,
+            "personality": pe_info,
+            "birthday": bd_info,
+            "rational_thought": rt_info,
+            "universal_day_today": ud_info,
+        },
         "meanings": {
             "life_path": MEANINGS[lp],
             "expression": MEANINGS[ex],
             "soul_urge": MEANINGS[su],
             "personality": MEANINGS[pe],
-            "birthday": MEANINGS[bd],
+            "birthday": MEANINGS[bd] if bd in MEANINGS else MEANINGS.get(reduce_to_single(bd), ""),
             "personal_year": YEAR_THEMES[py],
             "personal_month": MONTH_THEMES[pm],
             "personal_day": DAILY_VIBES[pd],
