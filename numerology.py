@@ -808,6 +808,82 @@ CHALLENGE_MEANINGS = {
 }
 
 
+def _transit_for_word(word: str, age: int) -> dict | None:
+    """Find the active letter in a transit cycle at a given age.
+
+    Each letter is active for as many years as its Pythagorean value.
+    After the last letter, cycle restarts from the first. So a name
+    summing to N years repeats every N years.
+    """
+    letters = [(ch, PYTHAGOREAN[ch]) for ch in word.upper() if ch in PYTHAGOREAN]
+    if not letters:
+        return None
+    cycle_length = sum(val for _, val in letters)
+    pos = age % cycle_length
+    cumulative = 0
+    for ch, val in letters:
+        if cumulative + val > pos:
+            year_in_letter = pos - cumulative + 1
+            started = age - (year_in_letter - 1)
+            return {
+                "letter": ch,
+                "value": val,
+                "started_at_age": started,
+                "ends_at_age": started + val - 1,
+                "year_in_letter": year_in_letter,
+                "remaining_years": val - year_in_letter,
+            }
+        cumulative += val
+    return None
+
+
+def transits(full_name: str, dob: date, today: date | None = None) -> dict:
+    """Decoz Three Transits — the currently active letter in each name layer:
+    Physical (first name), Mental (middle name), Spiritual (last name).
+    Each letter governs that layer for as many years as its number value.
+
+    For name-shape edge cases:
+      - 1 word: all three layers cycle through the same word.
+      - 2 words: Physical=first, Spiritual=last, Mental absent.
+      - 3+ words: Mental uses the first middle word.
+    """
+    today = today or today_local()
+    age = (today - dob).days // 365
+    words = _name_words(full_name)
+
+    if not words:
+        return {"age": age, "physical": None, "mental": None, "spiritual": None}
+
+    if len(words) == 1:
+        first = middle = last = words[0]
+    elif len(words) == 2:
+        first = words[0]
+        last = words[1]
+        middle = None
+    else:
+        first = words[0]
+        middle = words[1]
+        last = words[-1]
+
+    physical = _transit_for_word(first, age)
+    mental = _transit_for_word(middle, age) if middle else None
+    spiritual = _transit_for_word(last, age)
+
+    return {
+        "age": age,
+        "physical": physical,
+        "mental": mental,
+        "spiritual": spiritual,
+    }
+
+
+TRANSIT_LAYER_MEANINGS = {
+    "physical": "Lapisan fisik & dunia material — kerjaan, kesehatan, hubungan eksternal, hal-hal kasat mata.",
+    "mental": "Lapisan mental & emosional — pola pikir, perasaan, dinamika internal di balik tindakan.",
+    "spiritual": "Lapisan spiritual & jangka panjang — arah hidup, makna, growth lewat satu chapter penuh.",
+}
+
+
 def build_profile(
     full_name: str,
     dob: date,
