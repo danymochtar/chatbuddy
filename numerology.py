@@ -85,8 +85,30 @@ def digit_sum(n: int) -> int:
 
 
 def life_path(dob: date) -> int:
-    digits = [int(d) for d in dob.strftime("%d%m%Y")]
-    return reduce_number(sum(digits))
+    return life_path_full(dob)["final"]
+
+
+def life_path_full(dob: date) -> dict:
+    """Hans Decoz: reduce Month, Day, Year separately first, then combine.
+
+    This per-component reduction is what surfaces karmic debt at the
+    summing stage (e.g. 5 + 8 + 6 = 19 — karmic debt 19 — even though
+    every component reduces cleanly).
+    """
+    m_raw = dob.month
+    d_raw = dob.day
+    y_digits_sum = digit_sum(dob.year)
+    m_red = reduce_number(m_raw)
+    d_red = reduce_number(d_raw)
+    y_red = reduce_number(y_digits_sum)
+    total = m_red + d_red + y_red
+    info = chain_info(total, keep_master=True)
+    info["components"] = {
+        "month": chain_info(m_raw, keep_master=True),
+        "day": chain_info(d_raw, keep_master=True),
+        "year": chain_info(y_digits_sum, keep_master=True),
+    }
+    return info
 
 
 def letters_sum(name: str, only_vowels: bool = False, only_consonants: bool = False) -> int:
