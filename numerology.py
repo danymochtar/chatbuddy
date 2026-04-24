@@ -464,6 +464,24 @@ def karmic_lessons(name: str) -> list[int]:
     return sorted(set(range(1, 10)) - present)
 
 
+def subconscious_self(full_name: str) -> int:
+    """Decoz: 9 minus the number of Karmic Lessons (missing numbers in
+    full birth name). Range 3-9. Higher = more numerical "tools" in
+    the name → more confident in surprise situations."""
+    return 9 - len(karmic_lessons(full_name))
+
+
+SUBCONSCIOUS_SELF_MEANINGS = {
+    3: "Karakter belum lengkap — banyak situasi yang masih bikin lo bingung. Rentan panik di hal baru, tapi cepet adaptasi kalau udah dilatih.",
+    4: "Beberapa area diri lo masih rapuh. Saat di luar zona nyaman, perlu waktu buat kalibrasi. Tapi sekali ngerti, lo solid.",
+    5: "Mid-range — ada gap kepercayaan diri di beberapa situasi. Lo bisa pas-pasan sampai bagus, tergantung konteks.",
+    6: "Lumayan tools-mu lengkap. Kebanyakan situasi bisa lo handle, tapi jangan over-confident karena masih ada blind spot.",
+    7: "Cukup confident dalam banyak situasi — kalau ada yang surprise, biasanya lo cepet recover dan find footing.",
+    8: "Hampir semua tools ada. Confident, jarang panik, bisa improvise di hampir semua situasi sosial / emosional.",
+    9: "Semua angka 1-9 hadir di nama lo — confident penuh. Awas: bisa tergelincir ke aloof / over-confident di situasi yang sebenernya butuh humility.",
+}
+
+
 def hidden_passion(name: str) -> list[int]:
     from collections import Counter
     counts = Counter(PYTHAGOREAN[ch] for ch in name.upper() if ch in PYTHAGOREAN)
