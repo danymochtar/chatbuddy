@@ -464,6 +464,51 @@ def karmic_lessons(name: str) -> list[int]:
     return sorted(set(range(1, 10)) - present)
 
 
+PLANE_LETTERS = {
+    "physical": set("EMW"),
+    "mental": set("AHJNPGL"),
+    "emotional": set("BIORSTXZ"),
+    "intuitive": set("CDFKQUVY"),
+}
+
+
+PLANE_MEANINGS = {
+    "physical": "Plane fisik kuat — praktis, durable, sensual, grounded, hands-on. Lo bekerja paling baik dengan tubuh & dunia material.",
+    "mental": "Plane mental kuat — logis, analitis, fact-driven, sering jadi leader pemikir.",
+    "emotional": "Plane emosional kuat — imajinatif, sentimental, artistik, simpatik. Reaksi pertama lo lewat hati.",
+    "intuitive": "Plane intuitif kuat (jarang dominan) — spiritual, visioner, sensitif terhadap halus & spiritual.",
+}
+
+
+def planes_of_expression(full_name: str) -> dict:
+    """Decoz Planes of Expression — categorize letters of the full name
+    into Physical / Mental / Emotional / Intuitive groupings, sum values
+    per plane, reduce, and surface the dominant plane.
+    """
+    sums = {plane: 0 for plane in PLANE_LETTERS}
+    counts = {plane: 0 for plane in PLANE_LETTERS}
+    for ch in full_name.upper():
+        if ch not in PYTHAGOREAN:
+            continue
+        val = PYTHAGOREAN[ch]
+        for plane, letters in PLANE_LETTERS.items():
+            if ch in letters:
+                sums[plane] += val
+                counts[plane] += 1
+                break
+    reduced = {plane: reduce_number(s) if s else 0 for plane, s in sums.items()}
+    if any(sums.values()):
+        dominant = max(sums, key=lambda k: sums[k])
+    else:
+        dominant = None
+    return {
+        "sums": sums,
+        "counts": counts,
+        "reduced": reduced,
+        "dominant": dominant,
+    }
+
+
 def bridge(num1: int, num2: int) -> int:
     """Decoz Bridge = absolute difference between two reduced
     single-digit forms of related core numbers. Range 0-8.
