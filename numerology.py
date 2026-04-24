@@ -944,6 +944,22 @@ def build_profile(
     rt_info = rational_thought_full(full_name, dob)
     ud_info = universal_day_full(today)
 
+    # Decoz Master 33 rule: Life Path 33 only counts as master if at least
+    # one other master number (11/22/33) appears elsewhere in the core
+    # chart (Expression / Soul Urge / Personality / Birth Day). Otherwise
+    # reduce to 6.
+    if lp_info["final"] == 33:
+        other_masters: list[int] = []
+        for info in (ex_info, su_info, pe_info, bd_info):
+            other_masters.extend(info.get("masters", []))
+        if not other_masters:
+            components = lp_info.get("components")
+            demoted = chain_info(lp_info["raw"], keep_master=False)
+            if components:
+                demoted["components"] = components
+            demoted["demoted_from_33"] = True
+            lp_info = demoted
+
     lp = lp_info["final"]
     ex = ex_info["final"]
     su = su_info["final"]
