@@ -21,6 +21,65 @@ def reduce_number(n: int) -> int:
     return n
 
 
+def reduce_to_single(n: int) -> int:
+    """Fully reduce to 1-9 — master numbers are NOT preserved.
+    Used where Decoz says master should not stop reduction
+    (Universal Day, Personal Day, Challenges)."""
+    while n > 9:
+        n = sum(int(d) for d in str(n))
+    return n
+
+
+def chain_info(raw: int, keep_master: bool = True) -> dict:
+    """Walk the reduction chain and report:
+        raw            — the starting sum
+        chain          — every step including raw and final
+        final          — endpoint (master if keep_master and master appears, else 1-9)
+        single         — endpoint forced to 1-9 (master ignored)
+        masters        — master numbers appearing anywhere in chain
+        karmic_debts   — karmic debt numbers (13/14/16/19) in chain
+        notation       — "raw/final" or "raw/master/single" or "n" if no reduction
+    """
+    chain = [raw]
+    n = raw
+    if keep_master:
+        while n > 9 and n not in MASTER_NUMBERS:
+            n = sum(int(d) for d in str(n))
+            chain.append(n)
+    else:
+        while n > 9:
+            n = sum(int(d) for d in str(n))
+            chain.append(n)
+    final = chain[-1]
+    single = final
+    while single > 9:
+        single = sum(int(d) for d in str(single))
+    masters = [x for x in chain if x in MASTER_NUMBERS]
+    debts = [x for x in chain if x in KARMIC_DEBTS]
+    # Build notation: include master intermediates between raw and final
+    parts = [chain[0]]
+    for mid in chain[1:-1]:
+        if mid in MASTER_NUMBERS:
+            parts.append(mid)
+    if final != chain[0]:
+        parts.append(final)
+    notation = "/".join(str(p) for p in parts) if len(parts) > 1 else str(parts[0])
+    return {
+        "raw": raw,
+        "chain": chain,
+        "final": final,
+        "single": single,
+        "masters": masters,
+        "karmic_debts": debts,
+        "notation": notation,
+    }
+
+
+# Forward declarations — KARMIC_DEBTS dict is defined later in the file but
+# referenced by chain_info above. Define it early so the lookup works at module
+# import time.
+
+
 def digit_sum(n: int) -> int:
     return sum(int(d) for d in str(abs(n)))
 
