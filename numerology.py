@@ -464,6 +464,70 @@ def karmic_lessons(name: str) -> list[int]:
     return sorted(set(range(1, 10)) - present)
 
 
+def cornerstone(full_name: str) -> str:
+    """First letter of first name — how you approach opportunities & obstacles."""
+    words = _name_words(full_name)
+    if not words:
+        return ""
+    for ch in words[0]:
+        if ch in PYTHAGOREAN:
+            return ch
+    return ""
+
+
+def capstone(full_name: str) -> str:
+    """Last letter of first name — how you finish what you start."""
+    words = _name_words(full_name)
+    if not words:
+        return ""
+    for ch in reversed(words[0]):
+        if ch in PYTHAGOREAN:
+            return ch
+    return ""
+
+
+def first_vowel(full_name: str) -> str:
+    """First vowel of first name — private, soul-level window into deepest motivations."""
+    words = _name_words(full_name)
+    if not words:
+        return ""
+    for ch in words[0]:
+        if ch in VOWELS:
+            return ch
+    return ""
+
+
+# Decoz letter meanings (synthesized) — used for Cornerstone, Capstone, First Vowel
+LETTER_MEANINGS = {
+    "A": "ambisius, mandiri, inisiatif, cepat ambil keputusan",
+    "B": "sensitif, emosional, butuh harmoni & koneksi",
+    "C": "ekspresif, cerah, sosial, suka komunikasi",
+    "D": "praktis, terstruktur, pekerja keras, no-nonsense",
+    "E": "free spirit, banyak ide, butuh variasi & gerak",
+    "F": "responsibility, caring, berorientasi keluarga & komunitas",
+    "G": "introspektif, perfeksionis, deep thinker",
+    "H": "ambisi material, fokus pencapaian, organisator",
+    "I": "intens, passionate, emotional depth",
+    "J": "leader, innovator, butuh control & arah sendiri",
+    "K": "intuitif, tegang, high-strung, channel inspirasi",
+    "L": "selflessness, servis, kasih tanpa pamrih (sometimes too much)",
+    "M": "pekerja keras, stabil, pondasi, pengayom",
+    "N": "kreatif, ekspresif, kadang impulsif, butuh outlet",
+    "O": "tertutup, hati-hati, butuh ruang aman & boundary",
+    "P": "intelektual, analitis, butuh waktu sendiri",
+    "Q": "tegang/intens, magnetik, kadang kontradiktif",
+    "R": "tolerant, peduli orang banyak, humanitarian",
+    "S": "drama, emotional waves, charisma & turbulence",
+    "T": "spiritual, restless, mencari yang lebih besar",
+    "U": "artistik, generous, sensitif terhadap keindahan",
+    "V": "visioner, master builder, ambisi besar",
+    "W": "creative restlessness, banyak ide tapi sulit fokus",
+    "X": "intens, sensual, magnetic & complicated",
+    "Y": "ragu-ragu antara dua dunia, dualitas, butuh berani pilih",
+    "Z": "harapan, optimis, ambisi tertinggi",
+}
+
+
 def subconscious_self(full_name: str) -> int:
     """Decoz: 9 minus the number of Karmic Lessons (missing numbers in
     full birth name). Range 3-9. Higher = more numerical "tools" in
