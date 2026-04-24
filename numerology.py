@@ -884,6 +884,50 @@ TRANSIT_LAYER_MEANINGS = {
 }
 
 
+def essence(full_name: str, dob: date, today: date | None = None) -> dict:
+    """Decoz Essence Cycle — sum of the three currently active transit
+    letter values for the year. The double-digit form is preserved so
+    karmic debts (13/14/16/19) and masters (11/22/33) surface as flavor;
+    the reduced single digit is the headline theme.
+
+    If a layer is missing (no middle name), it contributes 0.
+    """
+    today = today or today_local()
+    t = transits(full_name, dob, today)
+    raw = 0
+    contributors = {}
+    for layer in ("physical", "mental", "spiritual"):
+        info = t.get(layer)
+        if info:
+            raw += info["value"]
+            contributors[layer] = {"letter": info["letter"], "value": info["value"]}
+        else:
+            contributors[layer] = None
+    info = chain_info(raw, keep_master=True) if raw else {
+        "raw": 0, "chain": [0], "final": 0, "single": 0,
+        "masters": [], "karmic_debts": [], "notation": "0",
+    }
+    info["contributors"] = contributors
+    info["age"] = t["age"]
+    return info
+
+
+ESSENCE_MEANINGS = {
+    1: "Tahun esensi 1 — momentum bikin lo lebih mandiri & inisiatif. Bisa muncul dorongan mulai sesuatu sendiri.",
+    2: "Tahun esensi 2 — fokus ke hubungan & kerja sama. Pelajaran soal sabar & sensitivity ke orang.",
+    3: "Tahun esensi 3 — ekspresi & kreatif lagi naik. Sosial, karya, bisa rame ide & emosi.",
+    4: "Tahun esensi 4 — kerja keras & disiplin. Bangun fondasi, rapi-rapiin sistem, hasil dari kerja konsisten.",
+    5: "Tahun esensi 5 — perubahan, freedom, banyak shift. Bisa pindah, ganti pekerjaan, hubungan baru.",
+    6: "Tahun esensi 6 — rumah, keluarga, tanggung jawab. Komitmen lebih mendalam, ngurus orang.",
+    7: "Tahun esensi 7 — refleksi, study, spiritual. Pelan-pelan, tarik diri, deep work.",
+    8: "Tahun esensi 8 — power, materi, achievement. Karir bisa naik level, urusan finansial signifikan.",
+    9: "Tahun esensi 9 — penutupan & lepas. Mengakhiri chapter, persiapan siklus baru.",
+    11: "Tahun esensi 11 (master) — intuisi tajam, momen awakening, jadi inspirator.",
+    22: "Tahun esensi 22 (master) — building skala besar, dampak jangka panjang.",
+    33: "Tahun esensi 33 (master) — service, devotion, kasih meluap ke komunitas.",
+}
+
+
 def build_profile(
     full_name: str,
     dob: date,
