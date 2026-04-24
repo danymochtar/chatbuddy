@@ -984,6 +984,30 @@ def build_profile(
     pins = pinnacles(dob)
     chals = challenges(dob)
     current = current_pinnacle_challenge(dob, today)
+
+    # Decoz Maturity activation: the Maturity number begins to assert
+    # itself in the late 30s and becomes a primary energy after ~age 50.
+    age_years = (today - dob).days // 365
+    if age_years >= 50:
+        maturity_phase = "active"
+    elif age_years >= 35:
+        maturity_phase = "emerging"
+    else:
+        maturity_phase = "latent"
+
+    planes = planes_of_expression(full_name)
+    cs_letter = cornerstone(full_name)
+    cap_letter = capstone(full_name)
+    fv_letter = first_vowel(full_name)
+    sub_self = subconscious_self(full_name)
+    bridges_data = {
+        "life_path_expression": bridge(lp, ex),
+        "soul_urge_personality": bridge(su, pe),
+    }
+    transit_data = transits(full_name, dob, today)
+    essence_data = essence(full_name, dob, today)
+    period_now = current_period_cycle(dob, today)
+
     nick = (nickname or "").strip() or full_name.strip().split()[0]
 
     return {
@@ -1011,6 +1035,18 @@ def build_profile(
         "pinnacles": pins,
         "challenges": chals,
         "current_phase": current,
+        # Decoz extras
+        "age": age_years,
+        "maturity_phase": maturity_phase,
+        "subconscious_self": sub_self,
+        "cornerstone": cs_letter,
+        "capstone": cap_letter,
+        "first_vowel": fv_letter,
+        "planes": planes,
+        "bridges": bridges_data,
+        "transits": transit_data,
+        "essence": essence_data,
+        "period_now": period_now,
         # Rich chain_info dicts (notation, components, masters, karmic intermediates)
         "info": {
             "life_path": lp_info,
