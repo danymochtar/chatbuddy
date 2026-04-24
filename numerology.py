@@ -488,7 +488,19 @@ def balance_number(full_name: str) -> int:
 
 
 def rational_thought(birthday_num: int, expression_num: int) -> int:
+    """Backward-compat shim — DEPRECATED. The previous formula
+    (birthday + expression) was wrong per Decoz. New code should call
+    rational_thought_full(full_name, dob)."""
     return reduce_number(birthday_num + expression_num)
+
+
+def rational_thought_full(full_name: str, dob: date) -> dict:
+    """Decoz: sum of letters in first name + Birth Day number.
+    Master numbers preserved."""
+    words = _name_words(full_name)
+    first_name_sum = _word_letter_sum(words[0]) if words else 0
+    raw = first_name_sum + dob.day
+    return chain_info(raw, keep_master=True)
 
 
 def _first_pinnacle_end_age(lp: int) -> int:
