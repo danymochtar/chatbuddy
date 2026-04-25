@@ -46,7 +46,7 @@ from zodiac import (
     sun_sign,
     weton,
 )
-from components import number_card, number_card_grid
+from components import cta_ask_deeper, number_card, number_card_grid
 from nav import render_sidebar_nav
 from theme import theme_css
 
@@ -147,6 +147,65 @@ TEXTS = {
     "nav_group_diri": {"id": "DIRI", "en": "SELF"},
     "nav_group_lapisan": {"id": "LAPISAN LAIN", "en": "OTHER LENSES"},
     "nav_group_tools": {"id": "TOOLS", "en": "TOOLS"},
+    "cta_ask_deeper": {
+        "id": "💬 Tanya lebih dalem di Beranda",
+        "en": "💬 Ask deeper in Home",
+    },
+    "draft_label_from": {"id": "Draft pertanyaan dari", "en": "Draft question from"},
+    "draft_send": {"id": "Kirim", "en": "Send"},
+    "draft_cancel": {"id": "Batal", "en": "Cancel"},
+    "seed_karakter": {
+        "id": "Soal karakter gw yang barusan lo tulis — bisa zoom-in ke bagian shadow / paradoks-nya? Yang paling sering ngeganggu menurut lo apa.",
+        "en": "About my character that you just wrote — can you zoom in on the shadow / paradox part? What you think shows up most often.",
+    },
+    "seed_inner": {
+        "id": "Soal sisi batin yang lo tulis tadi — bagian yang paling 'gw banget' yang mana? Pengen ngomongin itu lebih jauh.",
+        "en": "About the inner-world piece you just wrote — which part feels most 'me'? I want to talk about it more.",
+    },
+    "seed_karmic": {
+        "id": "PR hidup yang lo sebutin — gimana caranya gw mulai latih itu konkret?",
+        "en": "The life lessons you mentioned — how do I actually start practicing them concretely?",
+    },
+    "seed_fase": {
+        "id": "Fase yang gw lagi jalanin sekarang — kalo lo mau kasih satu tip paling actionable buat 30 hari ke depan, apa?",
+        "en": "The phase I'm in right now — if you had to give one most actionable tip for the next 30 days, what would it be?",
+    },
+    "seed_arah": {
+        "id": "Lanjutin soal arah bulan & tahun ini — yang paling perlu gw waspadain apa?",
+        "en": "Continue about this month's & year's direction — what should I be most cautious about?",
+    },
+    "seed_zodiak": {
+        "id": "Soal sun/moon/rising gw — bagian mana yang paling sering ngebenturin gw sama orang?",
+        "en": "About my sun/moon/rising — which part most often clashes with people?",
+    },
+    "seed_shio": {
+        "id": "Lanjutin soal shio gw — yang paling kerasa di kerjaan gimana?",
+        "en": "Continue about my Chinese zodiac — how does it show up most in my work?",
+    },
+    "seed_weton": {
+        "id": "Weton gw — apa pelajaran yang paling sering kelewatan menurut lo?",
+        "en": "My weton — what lesson do you think I most often miss?",
+    },
+    "seed_mbti": {
+        "id": "MBTI gw — bagian mana yang paling sering jadi blind spot?",
+        "en": "My MBTI — which part most often becomes a blind spot?",
+    },
+    "seed_career": {
+        "id": "Soal karir yang barusan lo baca — kalo gw harus ngambil 1 langkah minggu ini, apa.",
+        "en": "About the career read you just gave — if I have to take one step this week, what.",
+    },
+    "seed_relationship": {
+        "id": "Soal hubungan yang lo analisa — bagian friction-nya gimana cara nego-nya yang sehat?",
+        "en": "About the relationship you analyzed — how do I negotiate the friction part in a healthy way?",
+    },
+    "seed_reflection": {
+        "id": "Pertanyaan refleksi #1 — gw mau jawab dan diskusiin sama lo.",
+        "en": "Reflection question #1 — I want to answer it and talk it through with you.",
+    },
+    "seed_oracle": {
+        "id": "Soal verdict yang barusan lo kasih — gw masih bingung di kalimat penutupnya.",
+        "en": "About the verdict you just gave — I'm still stuck on the closing sentence.",
+    },
     "nav_karakter": {"id": "Karakter", "en": "Character"},
     "nav_inner": {"id": "Sisi Batin", "en": "Inner World"},
     "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
@@ -2472,35 +2531,67 @@ def maybe_extract_memory() -> None:
     save_session_to_storage()
 
 
+def _submit_chat_turn(profile: dict, zodiac: dict | None, user_input: str) -> None:
+    user_input = _sanitize(user_input, MAX_LEN_CHAT)
+    if not user_input:
+        return
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        full_text = stream_assistant(
+            messages_for_api=to_anthropic_messages(st.session_state.messages),
+            system=system_prompt(profile, zodiac, today_local()),
+            placeholder=placeholder,
+        )
+    if full_text:
+        st.session_state.messages.append({"role": "assistant", "content": full_text})
+        save_session_to_storage()
+        try:
+            maybe_extract_memory()
+        except Exception:
+            pass
+    else:
+        st.session_state.messages.pop()
+
+
+def _render_seed_pill(profile: dict, zodiac: dict | None) -> bool:
+    """Render the seeded-question pill (if any) above the chat input.
+    Returns True if a turn was submitted from the pill (caller should
+    skip its own chat_input call this run).
+    """
+    seed = st.session_state.get("_chat_seed")
+    if not seed:
+        return False
+    page_key = seed.get("page_key", "")
+    seed_text = seed.get("text", "")
+    nav_label = t(f"nav_{page_key}") if page_key else ""
+    with st.container(border=True):
+        if nav_label:
+            st.caption(f"_{t('draft_label_from')} **{nav_label}**_")
+        st.markdown(f"_{seed_text}_")
+        cols = st.columns([1, 1])
+        send = cols[0].button(t("draft_send"), key="_draft_send", type="primary", use_container_width=True)
+        cancel = cols[1].button(t("draft_cancel"), key="_draft_cancel", use_container_width=True)
+    if cancel:
+        st.session_state.pop("_chat_seed", None)
+        st.rerun()
+    if send:
+        st.session_state.pop("_chat_seed", None)
+        _submit_chat_turn(profile, zodiac, seed_text)
+        save_session_to_storage()
+        return True
+    return False
+
+
 def handle_chat_turn(profile: dict, zodiac: dict | None) -> None:
+    submitted_from_seed = _render_seed_pill(profile, zodiac)
+    if submitted_from_seed:
+        return
     user_input = st.chat_input(t("chat_placeholder"))
     if user_input:
-        user_input = _sanitize(user_input, MAX_LEN_CHAT)
-        if not user_input:
-            return
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.markdown(user_input)
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full_text = stream_assistant(
-                messages_for_api=to_anthropic_messages(st.session_state.messages),
-                system=system_prompt(profile, zodiac, today_local()),
-                placeholder=placeholder,
-            )
-        if full_text:
-            st.session_state.messages.append({"role": "assistant", "content": full_text})
-            save_session_to_storage()
-            # After each successful turn, possibly extract memory notes
-            # (runs only every N user messages).
-            try:
-                maybe_extract_memory()
-            except Exception:
-                pass
-        else:
-            # Claude call failed — remove the user message we just appended so
-            # user can resend without a dangling turn in the transcript.
-            st.session_state.messages.pop()
+        _submit_chat_turn(profile, zodiac, user_input)
 
 
 def build_full_profile(
@@ -2903,6 +2994,8 @@ else:
                 save_session_to_storage()
                 st.rerun()
 
+        handle_chat_turn(profile, zodiac)
+
     elif page == "karakter":
         number_card_grid([
             number_card(t(label_key), profile[key], t_archetype(profile[key]))
@@ -2915,49 +3008,64 @@ else:
             ]
         ])
         render_cached_text_page("karakter", kompleksitas_prompt, profile, zodiac)
+        cta_ask_deeper("karakter", t)
 
     elif page == "inner":
         render_cached_text_page("inner", inner_prompt, profile, zodiac)
+        cta_ask_deeper("inner", t)
 
     elif page == "karmic":
         render_cached_text_page("karmic", karmic_prompt, profile, zodiac)
+        cta_ask_deeper("karmic", t)
 
     elif page == "arah":
         render_cached_text_page("arah", arah_prompt, profile, zodiac)
+        cta_ask_deeper("arah", t)
 
     elif page == "fase":
         render_cached_text_page("fase", fase_prompt, profile, zodiac)
+        cta_ask_deeper("fase", t)
 
     elif page == "zodiak":
         render_cached_text_page(
             "zodiak", lambda: zodiak_prompt(zodiac), profile, zodiac,
         )
+        cta_ask_deeper("zodiak", t)
 
     elif page == "shio":
         render_cached_text_page(
             "shio", lambda: shio_prompt(zodiac or {}), profile, zodiac,
         )
+        cta_ask_deeper("shio", t)
 
     elif page == "weton":
         render_cached_text_page(
             "weton", lambda: weton_prompt(zodiac or {}), profile, zodiac,
         )
+        cta_ask_deeper("weton", t)
 
     elif page == "mbti":
         render_mbti_page(profile, zodiac)
+        if st.session_state.get("mbti"):
+            cta_ask_deeper("mbti", t)
 
     elif page == "career":
         render_career_page(profile, zodiac)
+        if (st.session_state.get("career") or {}).get("analysis"):
+            cta_ask_deeper("career", t)
 
     elif page == "relationship":
         render_relationship_page(profile, zodiac)
+        if st.session_state.get("relationships"):
+            cta_ask_deeper("relationship", t)
 
     elif page == "reflection":
         render_reflection_page(profile, zodiac)
+        cta_ask_deeper("reflection", t)
 
     elif page == "oracle":
         render_oracle_page(profile, zodiac)
-
-    handle_chat_turn(profile, zodiac)
+        if st.session_state.get("oracle_history"):
+            cta_ask_deeper("oracle", t)
 
 _flush_storage_if_dirty()

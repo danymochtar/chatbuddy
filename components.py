@@ -35,3 +35,21 @@ def number_card_grid(cards: list[str]) -> None:
         return
     html = '<div class="sn-card-grid">' + "".join(cards) + "</div>"
     st.markdown(html, unsafe_allow_html=True)
+
+
+def cta_ask_deeper(page_key: str, t) -> None:
+    """Render a 'Tanya lebih dalem' CTA at the bottom of a non-chat page.
+    Click → seeds the chat with a context-aware draft and switches to
+    Beranda. The draft renders as a 'pill' on Beranda with Send / Cancel.
+    """
+    if st.button(
+        t("cta_ask_deeper"),
+        key=f"ask_deeper_{page_key}",
+        use_container_width=True,
+    ):
+        st.session_state["_chat_seed"] = {
+            "page_key": page_key,
+            "text": t(f"seed_{page_key}"),
+        }
+        st.session_state.current_page = "chat"
+        st.rerun()
