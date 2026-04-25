@@ -94,6 +94,14 @@ TEXTS = {
     "vibe_pick_date_label": {"id": "Pilih tanggal", "en": "Pick a date"},
     "vibe_read_button": {"id": "🔮 Baca vibe", "en": "🔮 Read the vibe"},
     "vibe_loading": {"id": "Lagi baca energi…", "en": "Reading the energy…"},
+    "help_button_help": {
+        "id": "Apa arti angka-angka di sini?",
+        "en": "What do these numbers mean?",
+    },
+    "help_dialog_title": {
+        "id": "📖 Petunjuk Angka & Lapisan",
+        "en": "📖 Guide to the Numbers & Layers",
+    },
     "name_label": {
         "id": "Nama lengkap (sesuai akta lahir)",
         "en": "Full name (as on birth certificate)",
@@ -1288,6 +1296,207 @@ def show_pick_date_vibe_dialog() -> None:
         _stream_vibe_for_date(profile, zodiac, picked)
 
 
+def _help_content_id() -> list[tuple[str, str]]:
+    return [
+        ("✨ Sistem yang Dipake", (
+            "Supernova baca lo lewat **numerologi Pythagorean (Hans Decoz / World "
+            "Numerology)** sebagai lensa primer. Setiap huruf nama punya angka "
+            "(A=1, B=2, … I=9, lalu siklus ulang). Tanggal lahir & nama digabung "
+            "untuk bikin lapisan-lapisan karakter di bawah. Layer tambahan (zodiak "
+            "barat, shio, weton Jawa, MBTI) cuma jadi tekstur — bukan fokus utama."
+        )),
+        ("🔢 Angka Inti (Core Numbers)", (
+            "- **Misi Hidup (Life Path)** — perjalanan besar hidup lo. Dari tanggal lahir.\n"
+            "- **Bakat Bawaan (Expression)** — talenta natural lo. Dari semua huruf nama lengkap.\n"
+            "- **Panggilan Hati (Soul Urge)** — apa yang jiwa lo paling mau. Dari huruf vokal nama.\n"
+            "- **Aura Luar (Personality)** — first impression yang orang dapet dari lo. Dari huruf konsonan.\n"
+            "- **Talenta Lahir (Birthday)** — gift spesifik dari hari lahir lo."
+        )),
+        ("🌟 Angka Master (11, 22, 33)", (
+            "Angka double-digit yang ga direduksi karena bawa energi spiritual elevated:\n"
+            "- **11 — Visioner**: intuisi tajam, inspirator spiritual.\n"
+            "- **22 — Pembangun**: master builder, mewujudkan mimpi besar.\n"
+            "- **33 — Guru**: master teacher, pengabdi kemanusiaan (cuma valid kalau ada master "
+            "lain di chart, kalau ga reduce ke 6)."
+        )),
+        ("🎓 Karmic Debt & Karmic Lessons", (
+            "- **Karmic debt (13, 14, 16, 19)** — 'rem' yang muncul di chart. Bukan kutukan, "
+            "tapi pelajaran spesifik yang harus lo embrace:\n"
+            "  - 13 = disiplin & kerja keras\n"
+            "  - 14 = kelola kebebasan\n"
+            "  - 16 = lepas ego\n"
+            "  - 19 = balance mandiri & empati\n"
+            "- **Karmic lessons** — angka 1-9 yang **absen** dari nama lo. Itu tema yang ga "
+            "kebawa lahir, justru jadi PR yang harus lo aktif latih seumur hidup."
+        )),
+        ("🪞 Bekal Bawaan Tambahan", (
+            "- **Hidden passion** — angka yang paling sering muncul di nama. Drive paling kuat lo.\n"
+            "- **Maturity number** — versi dewasa lo, mulai aktif umur ~35-50.\n"
+            "- **Balance number** — cara lo handle emosi pas stres.\n"
+            "- **Rational thought** — gaya berpikir & ambil keputusan.\n"
+            "- **Subconscious self (3-9)** — seberapa lengkap toolkit lo buat hadapin situasi mendadak."
+        )),
+        ("🔤 Lapisan Halus dari Huruf Nama Depan", (
+            "- **Cornerstone** (huruf pertama) — cara lo nyamperin masalah / peluang baru.\n"
+            "- **Capstone** (huruf terakhir) — cara lo nutup / nyelesaiin sesuatu.\n"
+            "- **First vowel** (vokal pertama) — motif paling pribadi di balik nama lo."
+        )),
+        ("🌐 Plane of Expression", (
+            "Tilt natural lo — di mana energi lo paling 'rumah':\n"
+            "- **Physical** (huruf E, M, W) = praktis, hands-on, dunia material.\n"
+            "- **Mental** (A, H, J, N, P, G, L) = analitis, fact-driven.\n"
+            "- **Emotional** (B, I, O, R, S, T, X, Z) = imajinatif, simpatik.\n"
+            "- **Intuitive** (C, D, F, K, Q, U, V, Y) = visioner, spiritual."
+        )),
+        ("🌉 Bridge Numbers", (
+            "Selisih halus antara core numbers — 'jarak' yang harus lo jembatani:\n"
+            "- **Misi ↔ Bakat** — gap antara perjalanan hidup & talenta natural.\n"
+            "- **Hati ↔ Aura** — gap antara apa yang lo rasain di dalem vs yang orang liat dari luar.\n"
+            "Bridge 0 = energinya nyatu, bisa monoton. Bridge tinggi = lo tumbuh lewat usaha "
+            "nyatu-in dua angka itu."
+        )),
+        ("📆 Personal Cycles", (
+            "Vibe waktu yang spesifik buat lo:\n"
+            "- **Personal Year** — chapter besar tahun ini.\n"
+            "- **Personal Month** — texture bulan.\n"
+            "- **Personal Day** — energi dominan hari ini (selalu reduksi ke 1-9).\n"
+            "Klik tombol **🌞 Vibe hari ini** atau **📅** di atas buat baca vibe tanggal apapun."
+        )),
+        ("🌍 Universal Day", (
+            "Energi kolektif yang semua orang share di hari yang sama. Texture background "
+            "di balik Personal Day lo."
+        )),
+        ("🎯 Fase Hidup", (
+            "- **Period Cycles (3 babak besar)** — chapter panjang hidup lo: bulan lahir → "
+            "tanggal lahir → tahun lahir.\n"
+            "- **Pinnacles (4 fase peluang)** + **Challenges (4 obstacle)** — sub-chapter "
+            "yang lebih spesifik di dalem 3 babak besar."
+        )),
+        ("🌱 Transit & Essence (Vibe Tahun)", (
+            "Vibe yang lebih dalem dari Personal Year:\n"
+            "- **Transit** — huruf nama yang lagi 'aktif' di 3 lapisan (fisik / mental / "
+            "spiritual). Setiap huruf jadi tema selama X tahun (nilai numerologinya).\n"
+            "- **Essence** — total nilai 3 huruf transit. Tone halus yang melapisi tahun ini, "
+            "bisa surface karmic debt spesifik tahun itu."
+        )),
+        ("🌙 Lapisan Tambahan", (
+            "Bukan numerologi, tapi nambah nuansa:\n"
+            "- **Zodiak Barat** (Sun / Moon / Rising) — butuh jam & kota lahir.\n"
+            "- **Shio + Elemen** (Chinese zodiac).\n"
+            "- **Weton Jawa** (dina + pasaran + neptu).\n"
+            "- **MBTI** — tipe kepribadian yang lo share sendiri.\n"
+            "Buka menu masing-masing di sidebar buat baca lebih dalem."
+        )),
+    ]
+
+
+def _help_content_en() -> list[tuple[str, str]]:
+    return [
+        ("✨ The System", (
+            "Supernova reads you through **Pythagorean numerology (Hans Decoz / World "
+            "Numerology)** as the primary lens. Each letter has a number (A=1, B=2, … "
+            "I=9, then the cycle repeats). Birth date & name combine into the layers "
+            "below. Extra layers (Western astrology, Chinese zodiac, Javanese weton, "
+            "MBTI) are texture — not the focus."
+        )),
+        ("🔢 Core Numbers", (
+            "- **Life Mission (Life Path)** — the big arc of your life. From your birth date.\n"
+            "- **Natural Talent (Expression)** — your innate gifts. From all letters of your full name.\n"
+            "- **Heart's Calling (Soul Urge)** — what your soul truly wants. From the vowels.\n"
+            "- **Outer Aura (Personality)** — the first impression others get. From the consonants.\n"
+            "- **Birthday Gift** — a specific gift from the day you were born."
+        )),
+        ("🌟 Master Numbers (11, 22, 33)", (
+            "Double-digit numbers that don't reduce because they carry elevated spiritual energy:\n"
+            "- **11 — Visionary**: sharp intuition, spiritual inspirer.\n"
+            "- **22 — Builder**: master builder, manifests big dreams.\n"
+            "- **33 — Teacher**: master teacher, devotion to humanity (only valid if another "
+            "master appears in the chart; otherwise reduces to 6)."
+        )),
+        ("🎓 Karmic Debt & Karmic Lessons", (
+            "- **Karmic debt (13, 14, 16, 19)** — a 'brake' showing up in your chart. Not a "
+            "curse, but a specific lesson to embrace:\n"
+            "  - 13 = discipline & hard work\n"
+            "  - 14 = manage your freedom\n"
+            "  - 16 = release the ego\n"
+            "  - 19 = balance independence & empathy\n"
+            "- **Karmic lessons** — numbers 1-9 **missing** from your name. Themes you weren't "
+            "born with — life-long homework you have to actively practice."
+        )),
+        ("🪞 Supporting Numbers", (
+            "- **Hidden passion** — the number that appears most in your name. Your strongest drive.\n"
+            "- **Maturity number** — your mature self, becoming active around age 35-50.\n"
+            "- **Balance number** — how you handle emotions under stress.\n"
+            "- **Rational thought** — your style of thinking & decision-making.\n"
+            "- **Subconscious self (3-9)** — how complete your toolkit is for surprise situations."
+        )),
+        ("🔤 First-Name Letter Layers", (
+            "- **Cornerstone** (first letter) — how you approach problems / new opportunities.\n"
+            "- **Capstone** (last letter) — how you finish what you start.\n"
+            "- **First vowel** — the most private motif behind your name."
+        )),
+        ("🌐 Planes of Expression", (
+            "Your natural tilt — where your energy is most at home:\n"
+            "- **Physical** (E, M, W) = practical, hands-on, material.\n"
+            "- **Mental** (A, H, J, N, P, G, L) = analytical, fact-driven.\n"
+            "- **Emotional** (B, I, O, R, S, T, X, Z) = imaginative, sympathetic.\n"
+            "- **Intuitive** (C, D, F, K, Q, U, V, Y) = visionary, spiritual."
+        )),
+        ("🌉 Bridge Numbers", (
+            "The subtle gap between core numbers — what you have to bridge:\n"
+            "- **Mission ↔ Talent** — the gap between life arc & natural gift.\n"
+            "- **Heart ↔ Aura** — the gap between what you feel inside vs what others see.\n"
+            "Bridge 0 = energies merged, can be monotone. High bridge = you grow by uniting them."
+        )),
+        ("📆 Personal Cycles", (
+            "Time-based vibrations specific to you:\n"
+            "- **Personal Year** — this year's larger chapter.\n"
+            "- **Personal Month** — this month's texture.\n"
+            "- **Personal Day** — the dominant energy of today (always reduces to 1-9).\n"
+            "Hit **🌞 Today's vibe** or **📅** above to read the vibe of any date."
+        )),
+        ("🌍 Universal Day", (
+            "The collective energy everyone shares the same day. Texture behind your "
+            "Personal Day."
+        )),
+        ("🎯 Life Phases", (
+            "- **Period Cycles (3 big chapters)** — long life chapters: birth month → "
+            "birth day → birth year.\n"
+            "- **Pinnacles (4 opportunity phases)** + **Challenges (4 obstacles)** — more "
+            "specific sub-chapters inside the 3 big chapters."
+        )),
+        ("🌱 Transit & Essence (Year Vibe)", (
+            "A deeper layer on top of Personal Year:\n"
+            "- **Transit** — letters of your name that are currently 'active' in 3 layers "
+            "(physical / mental / spiritual). Each letter rules its layer for as many years "
+            "as its numerology value.\n"
+            "- **Essence** — sum of the 3 active transit letters. A subtle tone over the "
+            "year that can surface a year-specific karmic debt."
+        )),
+        ("🌙 Extra Layers", (
+            "Not numerology, but they add nuance:\n"
+            "- **Western Zodiac** (Sun / Moon / Rising) — needs birth time & city.\n"
+            "- **Chinese Zodiac + Element**.\n"
+            "- **Javanese Weton** (dina + pasaran + neptu).\n"
+            "- **MBTI** — the personality type you share yourself.\n"
+            "Open each menu in the sidebar for a deeper read."
+        )),
+    ]
+
+
+@st.dialog("📖")
+def show_help_dialog() -> None:
+    st.subheader(t("help_dialog_title"))
+    sections = (
+        _help_content_en()
+        if st.session_state.get("language", "id") == "en"
+        else _help_content_id()
+    )
+    for i, (title, body) in enumerate(sections):
+        with st.expander(title, expanded=(i == 0)):
+            st.markdown(body)
+
+
 def kompleksitas_prompt() -> str:
     return (
         "User buka page Karakter — mereka mau tau _siapa lo, kalo gw liat keseluruhan_. "
@@ -2415,7 +2624,15 @@ def _switch_language(new_lang: str) -> None:
 
 # 3. (Removed from main area; language toggle now lives in the sidebar.)
 
-st.markdown("# ✨ Supernova")
+_header_cols = st.columns([10, 1])
+_header_cols[0].markdown("# ✨ Supernova")
+if _header_cols[1].button(
+    "❓",
+    key="open_help_dialog",
+    help=t("help_button_help"),
+    use_container_width=True,
+):
+    show_help_dialog()
 
 if st.session_state.profile is None:
     with st.sidebar:
