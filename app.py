@@ -2797,33 +2797,34 @@ if st.session_state.profile is None:
                 if _pre_new_lang != st.session_state.language:
                     _switch_language(_pre_new_lang)
 
-    st.markdown(t("onboarding_intro"))
+    sn_empty(t("onboarding_intro"), icon="✨", allow_markdown=True)
     st.write("")
     st.subheader(t("kenalan"))
-    with st.form("profile_form"):
-        full_name = st.text_input(
-            t("name_label"),
-            placeholder="Contoh: Budi Santoso" if st.session_state.language == "id" else "Example: Jane Doe",
-            help=t("name_help"),
-        )
-        nickname = st.text_input(
-            t("nick_label"),
-            placeholder=t("nick_placeholder"),
-            help=t("nick_help"),
-        )
-        dob = st.date_input(
-            t("dob_label"),
-            min_value=date(1900, 1, 1),
-            max_value=date.today(),
-            value=date(2000, 1, 1),
-            format="DD/MM/YYYY",
-        )
-        col_time, col_city = st.columns(2)
-        with col_time:
-            birth_time_str = st.text_input(t("time_label"), placeholder="13:30")
-        with col_city:
-            birth_city = st.text_input(t("city_label"), placeholder="Jakarta")
-        submitted = st.form_submit_button(t("submit"), use_container_width=True)
+    with st.container(border=True):
+        with st.form("profile_form"):
+            full_name = st.text_input(
+                t("name_label"),
+                placeholder="Contoh: Budi Santoso" if st.session_state.language == "id" else "Example: Jane Doe",
+                help=t("name_help"),
+            )
+            nickname = st.text_input(
+                t("nick_label"),
+                placeholder=t("nick_placeholder"),
+                help=t("nick_help"),
+            )
+            dob = st.date_input(
+                t("dob_label"),
+                min_value=date(1900, 1, 1),
+                max_value=date.today(),
+                value=date(2000, 1, 1),
+                format="DD/MM/YYYY",
+            )
+            col_time, col_city = st.columns(2)
+            with col_time:
+                birth_time_str = st.text_input(t("time_label"), placeholder="13:30")
+            with col_city:
+                birth_city = st.text_input(t("city_label"), placeholder="Jakarta")
+            submitted = st.form_submit_button(t("submit"), use_container_width=True, type="primary")
 
     if submitted:
         if not full_name.strip() or len(full_name.strip()) < 2:
@@ -3007,7 +3008,11 @@ else:
 
         st.divider()
         st.caption(t("storage_note"))
-        if st.button(t("reset"), use_container_width=True):
+        if st.button(
+            t("reset"),
+            icon=":material/restart_alt:",
+            use_container_width=True,
+        ):
             clear_session_storage()
             for key in [
                 "profile", "zodiac", "messages", "opening_generated",

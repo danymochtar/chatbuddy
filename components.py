@@ -75,12 +75,18 @@ def profile_avatar_row(nickname: str, full_name: str, born_label: str, dob: str)
     st.markdown(html, unsafe_allow_html=True)
 
 
-def sn_empty(message: str, *, icon: str = "✨") -> None:
-    """Render a soft, branded empty-state card. Replaces stock st.info."""
-    safe = escape(message)
+def sn_empty(message: str, *, icon: str = "✨", allow_markdown: bool = False) -> None:
+    """Render a soft, branded empty-state card. Replaces stock st.info.
+
+    Set allow_markdown=True when the message contains markdown (bold,
+    italic, etc.) that should render — in that case the message is
+    passed through without HTML-escaping (it'll be parsed by
+    Streamlit's markdown engine before our wrapping HTML applies).
+    """
+    body = message if allow_markdown else escape(message)
     safe_icon = escape(icon)
     st.markdown(
-        f'<div class="sn-empty">{safe_icon} &nbsp; {safe}</div>',
+        f'<div class="sn-empty">{safe_icon} &nbsp; {body}</div>',
         unsafe_allow_html=True,
     )
 
