@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/* ─── Supernova brand tokens ───────────────────────────────────────── */
+:root {
+  /* Brand */
+  --sn-bg:           #0E1226;
+  --sn-surface:      #181C36;
+  --sn-surface-2:    #20254A;
+  --sn-gold:         #E9C77B;
+  --sn-gold-soft:    #B89A5A;
+  --sn-cyan:         #5BC0BE;
+  --sn-text:         #F2EAD3;
+  --sn-text-dim:     #9AA3B5;
+  --sn-text-muted:   #6F7891;
+
+  /* shadcn-compatible aliases */
+  --background:           var(--sn-bg);
+  --foreground:           var(--sn-text);
+  --card:                 var(--sn-surface);
+  --card-foreground:      var(--sn-text);
+  --popover:              var(--sn-surface);
+  --popover-foreground:   var(--sn-text);
+  --primary:              var(--sn-gold);
+  --primary-foreground:   #0E1226;
+  --secondary:            var(--sn-surface-2);
+  --secondary-foreground: var(--sn-text);
+  --muted:                var(--sn-surface);
+  --muted-foreground:     var(--sn-text-muted);
+  --accent:               var(--sn-surface-2);
+  --accent-foreground:    var(--sn-gold);
+  --destructive:          #E5484D;
+  --border:               rgba(233, 199, 123, 0.18);
+  --input:                rgba(233, 199, 123, 0.18);
+  --ring:                 var(--sn-gold);
+  --radius:               0.75rem;
+}
+
+/* ─── Tailwind theme inline (v4 syntax) ────────────────────────────── */
+@theme inline {
+  --color-background:           var(--background);
+  --color-foreground:           var(--foreground);
+  --color-card:                 var(--card);
+  --color-card-foreground:      var(--card-foreground);
+  --color-popover:              var(--popover);
+  --color-popover-foreground:   var(--popover-foreground);
+  --color-primary:              var(--primary);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary:            var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:          var(--destructive);
+  --color-border:               var(--border);
+  --color-input:                var(--input);
+  --color-ring:                 var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans:    var(--font-inter), system-ui, sans-serif;
+  --font-serif:   var(--font-lora), Georgia, serif;
+  --font-mono:    var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+/* ─── Body & base ──────────────────────────────────────────────────── */
+* {
+  border-color: var(--border);
+}
+
+html, body {
+  background: var(--sn-bg);
+  color: var(--sn-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+/* Reading column constrained mobile-app width */
+.sn-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  padding: 0 1rem;
+}
+
+/* Wordmark */
+.sn-wordmark {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.6rem;
+  background: linear-gradient(90deg, #F2EAD3 0%, #E9C77B 60%, #B89A5A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 24px rgba(233, 199, 123, 0.18);
+  display: inline-block;
+}
+
+/* Inline number tokens — gold pill in narrative */
+.sn-num {
+  display: inline-block;
+  padding: 0 0.36em;
+  margin: 0 0.08em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--sn-gold);
+  background: rgba(233, 199, 123, 0.08);
+  border-radius: 6px;
+}
+
+/* Streaming pulse */
+@keyframes sn-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+.sn-pulse {
+  display: inline-block;
+  animation: sn-pulse 1.6s ease-in-out infinite;
+}
