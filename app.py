@@ -173,6 +173,7 @@ TEXTS = {
         "id": "Lagi disusun…",
         "en": "Coming together…",
     },
+    "language_label": {"id": "🌐 Bahasa", "en": "🌐 Language"},
     "nav_group_diri": {"id": "DIRI", "en": "SELF"},
     "nav_group_lapisan": {"id": "LAPISAN LAIN", "en": "OTHER LENSES"},
     "nav_group_tools": {"id": "TOOLS", "en": "TOOLS"},
@@ -2675,6 +2676,158 @@ def handle_chat_turn(profile: dict, zodiac: dict | None) -> None:
         _submit_chat_turn(profile, zodiac, user_input)
 
 
+def render_profil_page(profile: dict, zodiac: dict | None) -> None:
+    """Profil tab — avatar, core numbers, subtle layers, year vibe,
+    settings (language toggle), and reset. Replaces the legacy sidebar
+    profile block now that the app uses a mobile-shell layout."""
+    nick_display = profile.get("nickname") or profile["full_name"].split()[0]
+    profile_avatar_row(
+        nick_display,
+        profile["full_name"],
+        t("born_word"),
+        profile["dob"],
+    )
+
+    with st.expander(t("angka_utama"), expanded=True):
+        number_card_grid([
+            number_card(t(label_key), profile[key], t_archetype(profile[key]))
+            for label_key, key in [
+                ("misi_hidup", "life_path"),
+                ("bakat_bawaan", "expression"),
+                ("panggilan_hati", "soul_urge"),
+                ("aura_luar", "personality"),
+                ("talenta_lahir", "birthday"),
+            ]
+        ])
+
+    with st.expander(t("lapisan_halus")):
+        debts = profile.get("karmic_debts") or {}
+        debt_labels = {
+            "life_path": t("misi_hidup"),
+            "expression": t("bakat_bawaan"),
+            "soul_urge": t("panggilan_hati"),
+            "personality": t("aura_luar"),
+        }
+        active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
+        for lbl, val in active_debts:
+            short = t_karmic_short(val)
+            st.markdown(f"**{lbl}** (`{val}`) — _{short}_")
+        lessons = profile.get("karmic_lessons") or []
+        if lessons:
+            st.markdown(f"**{t('pelajaran_label')}:**")
+            for n in lessons:
+                st.markdown(f"- `{n}` — _{t_lesson_short(n)}_")
+        else:
+            st.markdown(f"**{t('pelajaran_label')}:** {t('pelajaran_kosong')}")
+        passion = profile.get("hidden_passion") or []
+        if passion:
+            names = ", ".join(f"`{n}` · {t_archetype(n)}" for n in passion)
+            st.markdown(f"**{t('obsesi_label')}:** {names}")
+        maturity = profile.get("maturity")
+        if maturity:
+            phase_word = {
+                "latent": t("maturity_phase_latent"),
+                "emerging": t("maturity_phase_emerging"),
+                "active": t("maturity_phase_active"),
+            }.get(profile.get("maturity_phase"), "")
+            phase_suffix = f" · _{phase_word}_" if phase_word else ""
+            st.markdown(
+                f"**{t('versi_dewasa_label')}:** `{maturity}` · "
+                f"_{t_archetype(maturity)}_{phase_suffix}"
+            )
+        sub_self = profile.get("subconscious_self")
+        if sub_self:
+            st.markdown(f"**{t('subconscious_label')}:** `{sub_self}`")
+        planes = profile.get("planes") or {}
+        dominant = planes.get("dominant")
+        if dominant:
+            st.markdown(f"**{t('planes_label')}:** _{t(f'transit_{dominant}')}_")
+        bridges_data = profile.get("bridges") or {}
+        bridge_lp_ex = bridges_data.get("life_path_expression")
+        bridge_su_pe = bridges_data.get("soul_urge_personality")
+        if bridge_lp_ex is not None or bridge_su_pe is not None:
+            st.markdown(f"**{t('bridges_label')}:**")
+            if bridge_lp_ex is not None:
+                st.markdown(f"- {t('bridge_lp_ex_label')}: `{bridge_lp_ex}`")
+            if bridge_su_pe is not None:
+                st.markdown(f"- {t('bridge_su_pe_label')}: `{bridge_su_pe}`")
+        cs = profile.get("cornerstone")
+        cap = profile.get("capstone")
+        fv = profile.get("first_vowel")
+        if cs or cap or fv:
+            st.markdown("---")
+            if cs:
+                st.markdown(f"**{t('cornerstone_label')}:** `{cs}` · _{t_letter_meaning(cs)}_")
+            if cap:
+                st.markdown(f"**{t('capstone_label')}:** `{cap}` · _{t_letter_meaning(cap)}_")
+            if fv and fv != cs:
+                st.markdown(f"**{t('first_vowel_label')}:** `{fv}` · _{t_letter_meaning(fv)}_")
+
+    ess = profile.get("essence") or {}
+    transit = profile.get("transits") or {}
+    period_now = profile.get("period_now") or {}
+    if ess.get("final") or transit.get("physical") or transit.get("spiritual"):
+        with st.expander(t("vibe_tahun_label")):
+            if ess.get("final"):
+                ess_label = t_archetype(ess["final"])
+                st.markdown(f"**{t('essence_label')}:** `{ess['notation']}` · _{ess_label}_")
+            transit_layers = []
+            for layer in ("physical", "mental", "spiritual"):
+                info = transit.get(layer)
+                if info:
+                    layer_word = t(f"transit_{layer}")
+                    year_str = t("transit_year_of").format(
+                        n=info["year_in_letter"], total=info["value"]
+                    )
+                    transit_layers.append(f"- {layer_word}: `{info['letter']}` ({year_str})")
+            if transit_layers:
+                st.markdown(f"**{t('transit_label')}:**")
+                for tl in transit_layers:
+                    st.markdown(tl)
+            if period_now.get("number"):
+                end_age = period_now.get("end_age")
+                end_str = str(end_age) if end_age is not None else "∞"
+                pn_label = t_archetype(period_now["number"])
+                st.markdown(
+                    f"**{t('period_now_label')}:** `{period_now['number']}` · "
+                    f"_{pn_label}_ ({t('age_range_word')} "
+                    f"{period_now['start_age']}-{end_str})"
+                )
+
+    st.divider()
+    st.caption(t("language_label"))
+    _profil_lang_choice = st.segmented_control(
+        "lang_profil",
+        options=["ID", "EN"],
+        default="ID" if st.session_state.language == "id" else "EN",
+        label_visibility="collapsed",
+        key="_lang_profil_toggle",
+    )
+    if _profil_lang_choice:
+        _new_lang = "id" if _profil_lang_choice == "ID" else "en"
+        if _new_lang != st.session_state.language:
+            _switch_language(_new_lang)
+
+    st.divider()
+    st.caption(t("storage_note"))
+    if st.button(
+        t("reset"),
+        icon=":material/restart_alt:",
+        key="reset_profil",
+        use_container_width=True,
+    ):
+        clear_session_storage()
+        for key in [
+            "profile", "zodiac", "messages", "opening_generated",
+            "cached_pages", "relationships", "current_page", "mbti",
+            "career", "_career_editing", "journal", "oracle_history",
+            "user_notes", "last_memory_extract_at",
+        ]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.rerun()
+
+
 def build_full_profile(
     full_name: str,
     dob: date,
@@ -2800,21 +2953,19 @@ elif _open_vibe_dialog and st.session_state.profile is not None:
     show_vibe_dialog()
 
 if st.session_state.profile is None:
-    with st.sidebar:
-        _pre_lang_cols = st.columns([1, 2])
-        _pre_lang_cols[0].caption("🌐")
-        with _pre_lang_cols[1]:
-            _pre_choice = st.segmented_control(
-                "lang_pre",
-                options=["ID", "EN"],
-                default="ID" if st.session_state.language == "id" else "EN",
-                label_visibility="collapsed",
-                key="_lang_pre_toggle",
-            )
-            if _pre_choice:
-                _pre_new_lang = "id" if _pre_choice == "ID" else "en"
-                if _pre_new_lang != st.session_state.language:
-                    _switch_language(_pre_new_lang)
+    _pre_lang_cols = st.columns([7, 2])
+    with _pre_lang_cols[1]:
+        _pre_choice = st.segmented_control(
+            "lang_pre",
+            options=["ID", "EN"],
+            default="ID" if st.session_state.language == "id" else "EN",
+            label_visibility="collapsed",
+            key="_lang_pre_toggle",
+        )
+        if _pre_choice:
+            _pre_new_lang = "id" if _pre_choice == "ID" else "en"
+            if _pre_new_lang != st.session_state.language:
+                _switch_language(_pre_new_lang)
 
     sn_empty(t("onboarding_intro"), icon="✨", allow_markdown=True)
     st.write("")
@@ -2876,168 +3027,6 @@ if st.session_state.profile is None:
 else:
     profile = st.session_state.profile
     zodiac = st.session_state.zodiac
-
-    with st.sidebar:
-        _sb_lang_cols = st.columns([1, 2])
-        _sb_lang_cols[0].caption("🌐")
-        with _sb_lang_cols[1]:
-            _sb_choice = st.segmented_control(
-                "lang_sidebar",
-                options=["ID", "EN"],
-                default="ID" if st.session_state.language == "id" else "EN",
-                label_visibility="collapsed",
-                key="_lang_sidebar_toggle",
-            )
-            if _sb_choice:
-                _sb_new_lang = "id" if _sb_choice == "ID" else "en"
-                if _sb_new_lang != st.session_state.language:
-                    _switch_language(_sb_new_lang)
-
-        nick_display = profile.get("nickname") or profile["full_name"].split()[0]
-        profile_avatar_row(
-            nick_display,
-            profile["full_name"],
-            t("born_word"),
-            profile["dob"],
-        )
-
-        with st.expander(t("angka_utama")):
-            number_card_grid([
-                number_card(t(label_key), profile[key], t_archetype(profile[key]))
-                for label_key, key in [
-                    ("misi_hidup", "life_path"),
-                    ("bakat_bawaan", "expression"),
-                    ("panggilan_hati", "soul_urge"),
-                    ("aura_luar", "personality"),
-                    ("talenta_lahir", "birthday"),
-                ]
-            ])
-
-        with st.expander(t("lapisan_halus")):
-            debts = profile.get("karmic_debts") or {}
-            debt_labels = {
-                "life_path": t("misi_hidup"),
-                "expression": t("bakat_bawaan"),
-                "soul_urge": t("panggilan_hati"),
-                "personality": t("aura_luar"),
-            }
-            active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
-            for lbl, val in active_debts:
-                short = t_karmic_short(val)
-                st.markdown(f"**{lbl}** (`{val}`) — _{short}_")
-            lessons = profile.get("karmic_lessons") or []
-            if lessons:
-                st.markdown(f"**{t('pelajaran_label')}:**")
-                for n in lessons:
-                    st.markdown(f"- `{n}` — _{t_lesson_short(n)}_")
-            else:
-                st.markdown(f"**{t('pelajaran_label')}:** {t('pelajaran_kosong')}")
-            passion = profile.get("hidden_passion") or []
-            if passion:
-                names = ", ".join(f"`{n}` · {t_archetype(n)}" for n in passion)
-                st.markdown(f"**{t('obsesi_label')}:** {names}")
-            maturity = profile.get("maturity")
-            if maturity:
-                phase_word = {
-                    "latent": t("maturity_phase_latent"),
-                    "emerging": t("maturity_phase_emerging"),
-                    "active": t("maturity_phase_active"),
-                }.get(profile.get("maturity_phase"), "")
-                phase_suffix = f" · _{phase_word}_" if phase_word else ""
-                st.markdown(
-                    f"**{t('versi_dewasa_label')}:** `{maturity}` · "
-                    f"_{t_archetype(maturity)}_{phase_suffix}"
-                )
-            sub_self = profile.get("subconscious_self")
-            if sub_self:
-                st.markdown(f"**{t('subconscious_label')}:** `{sub_self}`")
-            planes = profile.get("planes") or {}
-            dominant = planes.get("dominant")
-            if dominant:
-                st.markdown(f"**{t('planes_label')}:** _{t(f'transit_{dominant}')}_")
-            bridges_data = profile.get("bridges") or {}
-            bridge_lp_ex = bridges_data.get("life_path_expression")
-            bridge_su_pe = bridges_data.get("soul_urge_personality")
-            if bridge_lp_ex is not None or bridge_su_pe is not None:
-                st.markdown(f"**{t('bridges_label')}:**")
-                if bridge_lp_ex is not None:
-                    st.markdown(f"- {t('bridge_lp_ex_label')}: `{bridge_lp_ex}`")
-                if bridge_su_pe is not None:
-                    st.markdown(f"- {t('bridge_su_pe_label')}: `{bridge_su_pe}`")
-
-            cs = profile.get("cornerstone")
-            cap = profile.get("capstone")
-            fv = profile.get("first_vowel")
-            if cs or cap or fv:
-                st.markdown("---")
-                if cs:
-                    st.markdown(
-                        f"**{t('cornerstone_label')}:** `{cs}` · "
-                        f"_{t_letter_meaning(cs)}_"
-                    )
-                if cap:
-                    st.markdown(
-                        f"**{t('capstone_label')}:** `{cap}` · "
-                        f"_{t_letter_meaning(cap)}_"
-                    )
-                if fv and fv != cs:
-                    st.markdown(
-                        f"**{t('first_vowel_label')}:** `{fv}` · "
-                        f"_{t_letter_meaning(fv)}_"
-                    )
-
-        ess = profile.get("essence") or {}
-        transit = profile.get("transits") or {}
-        period_now = profile.get("period_now") or {}
-        if ess.get("final") or transit.get("physical") or transit.get("spiritual"):
-            with st.expander(t("vibe_tahun_label")):
-                if ess.get("final"):
-                    ess_label = t_archetype(ess["final"])
-                    st.markdown(
-                        f"**{t('essence_label')}:** `{ess['notation']}` · _{ess_label}_"
-                    )
-                transit_layers = []
-                for layer in ("physical", "mental", "spiritual"):
-                    info = transit.get(layer)
-                    if info:
-                        layer_word = t(f"transit_{layer}")
-                        year_str = t("transit_year_of").format(
-                            n=info["year_in_letter"], total=info["value"]
-                        )
-                        transit_layers.append(
-                            f"- {layer_word}: `{info['letter']}` ({year_str})"
-                        )
-                if transit_layers:
-                    st.markdown(f"**{t('transit_label')}:**")
-                    for tl in transit_layers:
-                        st.markdown(tl)
-                if period_now.get("number"):
-                    end_age = period_now.get("end_age")
-                    end_str = str(end_age) if end_age is not None else "∞"
-                    pn_label = t_archetype(period_now["number"])
-                    st.markdown(
-                        f"**{t('period_now_label')}:** `{period_now['number']}` · "
-                        f"_{pn_label}_ ({t('age_range_word')} "
-                        f"{period_now['start_age']}-{end_str})"
-                    )
-
-        st.divider()
-        st.caption(t("storage_note"))
-        if st.button(
-            t("reset"),
-            icon=":material/restart_alt:",
-            use_container_width=True,
-        ):
-            clear_session_storage()
-            for key in [
-                "profile", "zodiac", "messages", "opening_generated",
-                "cached_pages", "relationships", "current_page", "mbti",
-                "career", "_career_editing", "journal", "oracle_history",
-                "user_notes", "last_memory_extract_at",
-            ]:
-                if key in st.session_state:
-                    del st.session_state[key]
-            st.rerun()
 
     sync_page_from_query()
     page = st.session_state.current_page
@@ -3176,8 +3165,11 @@ else:
         if st.session_state.get("oracle_history"):
             cta_ask_deeper("oracle", t)
 
-    elif page in ("diri", "vibe", "tools", "profil"):
-        # Tab landing pages — populated in commits 17 & 18.
+    elif page == "profil":
+        render_profil_page(profile, zodiac)
+
+    elif page in ("diri", "vibe", "tools"):
+        # Tab landing pages — populated in commit 18.
         st.subheader(t(f"nav_tab_{page}"))
         sn_empty(t("tab_landing_placeholder"), icon="🚧")
 
