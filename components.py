@@ -61,6 +61,17 @@ def sn_empty(message: str, *, icon: str = "✨") -> None:
     )
 
 
+def render_loading_pulse(placeholder, message: str) -> None:
+    """Render a pulsing ✨ + label into a Streamlit placeholder. The first
+    streamed chunk overwrites it, so this works as a brand-aligned
+    replacement for st.spinner around stream_assistant calls."""
+    safe = escape(message)
+    placeholder.markdown(
+        f'<div class="sn-empty"><span class="sn-pulse">✨</span> &nbsp; <em>{safe}</em></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def cta_ask_deeper(page_key: str, t) -> None:
     """Render a 'Tanya lebih dalem' CTA at the bottom of a non-chat page.
     Click → seeds the chat with a context-aware draft and switches to

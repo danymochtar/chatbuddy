@@ -51,6 +51,7 @@ from components import (
     number_card,
     number_card_grid,
     profile_avatar_row,
+    render_loading_pulse,
     sn_empty,
 )
 from nav import render_sidebar_nav
@@ -1984,13 +1985,13 @@ def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
         if not q_clean:
             st.error(t("oracle_err"))
         else:
-            with st.spinner(t("oracle_loading")):
-                placeholder = st.empty()
-                answer = stream_assistant(
-                    messages_for_api=[{"role": "user", "content": oracle_prompt(q_clean)}],
-                    system=system_prompt(profile, zodiac, today_local()),
-                    placeholder=placeholder,
-                )
+            placeholder = st.empty()
+            render_loading_pulse(placeholder, t("oracle_loading"))
+            answer = stream_assistant(
+                messages_for_api=[{"role": "user", "content": oracle_prompt(q_clean)}],
+                system=system_prompt(profile, zodiac, today_local()),
+                placeholder=placeholder,
+            )
             if answer:
                 history = st.session_state.get("oracle_history", [])
                 history.append({
@@ -2452,13 +2453,13 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
                     _sanitize(p_name, MAX_LEN_NAME), p_dob,
                     nickname=_sanitize(p_nick, MAX_LEN_NICK) or None,
                 )
-                with st.spinner(t("rel_loading")):
-                    placeholder = st.empty()
-                    analysis = stream_assistant(
-                        messages_for_api=[{"role": "user", "content": relationship_prompt(partner, p_relation)}],
-                        system=system_prompt(profile, zodiac, today_local()),
-                        placeholder=placeholder,
-                    )
+                placeholder = st.empty()
+                render_loading_pulse(placeholder, t("rel_loading"))
+                analysis = stream_assistant(
+                    messages_for_api=[{"role": "user", "content": relationship_prompt(partner, p_relation)}],
+                    system=system_prompt(profile, zodiac, today_local()),
+                    placeholder=placeholder,
+                )
                 if analysis:
                     rels = st.session_state.get("relationships", [])
                     rels.append({
