@@ -101,6 +101,18 @@ TEXTS = {
         "id": "📖 Petunjuk Angka & Lapisan",
         "en": "📖 Guide to the Numbers & Layers",
     },
+    "help_group_system": {
+        "id": "Sistem & Angka",
+        "en": "System & Core Numbers",
+    },
+    "help_group_layers": {
+        "id": "Lapisan Halus",
+        "en": "Subtle Layers",
+    },
+    "help_group_cycles": {
+        "id": "Siklus Waktu & Lapisan Tambahan",
+        "en": "Time Cycles & Extra Layers",
+    },
     "name_label": {
         "id": "Nama lengkap (sesuai akta lahir)",
         "en": "Full name (as on birth certificate)",
@@ -1528,6 +1540,13 @@ def _help_content_en() -> list[tuple[str, str]]:
     ]
 
 
+_HELP_GROUPS: list[tuple[str, list[int]]] = [
+    ("help_group_system", [0, 1, 2, 3]),
+    ("help_group_layers", [4, 5, 6, 7]),
+    ("help_group_cycles", [8, 9, 10, 11, 12]),
+]
+
+
 @st.dialog("📖")
 def show_help_dialog() -> None:
     st.subheader(t("help_dialog_title"))
@@ -1536,9 +1555,16 @@ def show_help_dialog() -> None:
         if st.session_state.get("language", "id") == "en"
         else _help_content_id()
     )
-    for i, (title, body) in enumerate(sections):
-        with st.expander(title, expanded=(i == 0)):
-            st.markdown(body)
+    for group_idx, (group_key, indices) in enumerate(_HELP_GROUPS):
+        with st.expander(t(group_key), expanded=(group_idx == 0)):
+            for sub_idx, section_idx in enumerate(indices):
+                if section_idx >= len(sections):
+                    continue
+                title, body = sections[section_idx]
+                if sub_idx > 0:
+                    st.markdown("---")
+                st.markdown(f"#### {title}")
+                st.markdown(body)
 
 
 def kompleksitas_prompt() -> str:
