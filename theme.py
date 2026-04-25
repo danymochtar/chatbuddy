@@ -32,9 +32,19 @@ def theme_css() -> str:
 [data-testid="stMain"] .block-container {
   max-width: 480px;
   padding-top: 1rem;
-  padding-bottom: 6.5rem; /* clearance for fixed bottom tab bar */
+  padding-bottom: 9rem; /* room for chat input + bottom tab bar stack */
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* Push chat_input above the fixed bottom tab bar */
+[data-testid="stChatInput"],
+[data-testid="stBottomBlockContainer"] {
+  bottom: 4.5rem !important;
+  max-width: 480px !important;
+  margin: 0 auto !important;
+  left: 0 !important;
+  right: 0 !important;
 }
 
 /* Hide the sidebar and its hamburger control */

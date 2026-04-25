@@ -97,13 +97,13 @@ TEXTS = {
         "en": "✨ **Supernova** — an intuitive entity that reads you through your name and birthday. Calm, warm, no small talk. Share your details below, I'll hand back a portrait that lands.",
     },
     "kenalan": {"id": "Kenalan dulu yuk", "en": "Let's get to know you"},
-    "vibe_button_help": {
-        "id": "Baca vibe energi — default hari ini, bisa pilih tanggal lain",
-        "en": "Read the vibe — defaults to today, pick any date",
-    },
     "vibe_dialog_title": {
         "id": "✨ Vibe Energi",
         "en": "✨ Energy Vibe",
+    },
+    "alternate_lenses_label": {
+        "id": "🔭 Lensa lain",
+        "en": "🔭 Other lenses",
     },
     "vibe_pick_date_label": {"id": "Pilih tanggal", "en": "Pick a date"},
     "vibe_read_button": {"id": "🔮 Baca vibe", "en": "🔮 Read the vibe"},
@@ -1416,15 +1416,12 @@ def _stream_vibe_for_date(profile: dict, zodiac: dict | None, target: date) -> N
         cache[cache_key] = answer
 
 
-@st.dialog("✨")
-def show_vibe_dialog() -> None:
-    """Single consolidated vibe dialog. Defaults to today; user can pick
-    any date and the new date auto-streams (cached after first read)."""
-    profile = st.session_state.get("profile") or {}
-    zodiac = st.session_state.get("zodiac")
+def render_vibe_today_section(profile: dict, zodiac: dict | None) -> None:
+    """Top section of the Vibe tab — date picker (defaults to today)
+    plus an auto-streamed reading. Replaces the old show_vibe_dialog
+    modal so the energy reading lives natively inside the tab page."""
     if not profile:
         return
-    st.subheader(t("vibe_dialog_title"))
     today = today_local()
     picked = st.date_input(
         t("vibe_pick_date_label"),
@@ -1434,7 +1431,6 @@ def show_vibe_dialog() -> None:
         max_value=date(today.year + 50, 12, 31),
     )
     st.session_state["_vibe_pick_date_value"] = picked
-    st.divider()
     _stream_vibe_for_date(profile, zodiac, picked)
 
 
@@ -2987,19 +2983,12 @@ def _switch_language(new_lang: str) -> None:
     st.rerun()
 
 
-_header_cols = st.columns([8, 1, 1])
+_header_cols = st.columns([9, 1])
 _header_cols[0].markdown(
     '<span class="sn-wordmark">✨ Supernova</span>',
     unsafe_allow_html=True,
 )
-_open_vibe_dialog = _header_cols[1].button(
-    "",
-    icon=":material/auto_awesome:",
-    key="open_vibe_dialog",
-    help=t("vibe_button_help"),
-    use_container_width=True,
-)
-_open_help_dialog = _header_cols[2].button(
+_open_help_dialog = _header_cols[1].button(
     "",
     icon=":material/help_outline:",
     key="open_help_dialog",
@@ -3008,8 +2997,6 @@ _open_help_dialog = _header_cols[2].button(
 )
 if _open_help_dialog:
     show_help_dialog()
-elif _open_vibe_dialog and st.session_state.profile is not None:
-    show_vibe_dialog()
 
 if st.session_state.profile is None:
     _pre_lang_cols = st.columns([7, 2])
@@ -3233,7 +3220,14 @@ else:
     elif page == "profil":
         render_profil_page(profile, zodiac)
 
-    elif page in ("diri", "vibe", "tools"):
+    elif page == "vibe":
+        st.subheader(t("nav_tab_vibe"))
+        render_vibe_today_section(profile, zodiac)
+        st.divider()
+        st.markdown(f"##### {t('alternate_lenses_label')}")
+        render_tab_landing(TAB_ITEMS["vibe"], t)
+
+    elif page in ("diri", "tools"):
         st.subheader(t(f"nav_tab_{page}"))
         render_tab_landing(TAB_ITEMS[page], t)
 
