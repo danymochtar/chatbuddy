@@ -46,6 +46,7 @@ from zodiac import (
     sun_sign,
     weton,
 )
+from components import number_card, number_card_grid
 from theme import theme_css
 
 MODEL = "claude-haiku-4-5"
@@ -2720,15 +2721,16 @@ else:
         st.caption(f"_{profile['full_name']} · {t('born_word')} {profile['dob']}_")
 
         with st.expander(t("angka_utama")):
-            for label_key, key in [
-                ("misi_hidup", "life_path"),
-                ("bakat_bawaan", "expression"),
-                ("panggilan_hati", "soul_urge"),
-                ("aura_luar", "personality"),
-                ("talenta_lahir", "birthday"),
-            ]:
-                num = profile[key]
-                st.markdown(f"**{t(label_key)}:** `{num}` · _{t_archetype(num)}_")
+            number_card_grid([
+                number_card(t(label_key), profile[key], t_archetype(profile[key]))
+                for label_key, key in [
+                    ("misi_hidup", "life_path"),
+                    ("bakat_bawaan", "expression"),
+                    ("panggilan_hati", "soul_urge"),
+                    ("aura_luar", "personality"),
+                    ("talenta_lahir", "birthday"),
+                ]
+            ])
 
         with st.expander(t("aspek_detail")):
             debts = profile.get("karmic_debts") or {}
@@ -2924,6 +2926,16 @@ else:
                 st.rerun()
 
     elif page == "karakter":
+        number_card_grid([
+            number_card(t(label_key), profile[key], t_archetype(profile[key]))
+            for label_key, key in [
+                ("misi_hidup", "life_path"),
+                ("bakat_bawaan", "expression"),
+                ("panggilan_hati", "soul_urge"),
+                ("aura_luar", "personality"),
+                ("talenta_lahir", "birthday"),
+            ]
+        ])
         render_cached_text_page("karakter", kompleksitas_prompt, profile, zodiac)
 
     elif page == "inner":
