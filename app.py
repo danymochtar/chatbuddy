@@ -51,6 +51,7 @@ from components import (
     number_card,
     number_card_grid,
     profile_avatar_row,
+    render_ai_markdown,
     render_loading_pulse,
     sn_empty,
 )
@@ -2021,7 +2022,7 @@ def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
                 save_session_to_storage()
                 st.rerun()
             st.markdown(f"**❓ {entry['question']}**")
-            st.markdown(entry["answer"])
+            render_ai_markdown(entry["answer"])
 
 
 def reflection_prompt() -> str:
@@ -2184,7 +2185,7 @@ def render_career_page(profile: dict, zodiac: dict | None) -> None:
     st.divider()
 
     if current.get("analysis"):
-        st.markdown(current["analysis"])
+        render_ai_markdown(current["analysis"])
         _, refresh_col = st.columns([7, 1])
         if refresh_col.button(
             "",
@@ -2384,7 +2385,7 @@ def render_cached_text_page(
     confirm_key = f"_confirm_refresh_{page_key}"
 
     if text:
-        st.markdown(text)
+        render_ai_markdown(text)
         if st.session_state.get(confirm_key):
             st.warning(t("refresh_confirm"))
             c1, c2, _ = st.columns([1, 1, 5])
@@ -2492,7 +2493,7 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
                 st.rerun()
             st.caption(f"{rel['partner_name']} · lahir {rel['partner_dob']}")
             if rel.get("analysis"):
-                st.markdown(rel["analysis"])
+                render_ai_markdown(rel["analysis"])
             else:
                 placeholder = st.empty()
                 new_analysis = stream_assistant(
@@ -3035,7 +3036,10 @@ else:
             with st.chat_message(msg["role"]):
                 if msg.get("is_opening"):
                     st.caption(t("opening_byline"))
-                st.markdown(msg["content"])
+                if msg["role"] == "assistant":
+                    render_ai_markdown(msg["content"])
+                else:
+                    st.markdown(msg["content"])
                 if msg.get("is_opening") and st.session_state.opening_generated:
                     _, regen_col = st.columns([8, 1])
                     if regen_col.button(

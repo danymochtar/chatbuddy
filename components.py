@@ -8,9 +8,33 @@ refactor of app.py.
 
 from __future__ import annotations
 
+import re
 from html import escape
 
 import streamlit as st
+
+
+# Matches parenthesized numerology tokens — single 1-2 digit numbers and
+# slash-chained reductions like (29/11/2). Lookbehind / lookahead prevent
+# matching things like "year (2023)" or "1(2)pm".
+_INLINE_NUM_PATTERN = re.compile(
+    r"(?<![\w/])\((\d{1,2}(?:/\d{1,2})*)\)(?![\w])"
+)
+
+
+def inject_inline_num_tokens(text: str) -> str:
+    """Wrap parenthesized numerology tokens with the .sn-inline-num pill.
+    Apply to assistant-generated markdown only — never user input.
+    Renders as HTML, so callers must use unsafe_allow_html=True.
+    """
+    if not text:
+        return text
+    return _INLINE_NUM_PATTERN.sub(r'<span class="sn-inline-num">\1</span>', text)
+
+
+def render_ai_markdown(text: str) -> None:
+    """Render assistant markdown with the inline-num pill applied."""
+    st.markdown(inject_inline_num_tokens(text or ""), unsafe_allow_html=True)
 
 
 def number_card(label: str, num: int | str | None, archetype: str | None = None) -> str:
