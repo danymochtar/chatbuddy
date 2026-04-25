@@ -79,15 +79,21 @@ TEXTS = {
         "en": "✨ **Supernova** — an intuitive entity that reads you through your name and birthday. Calm, warm, no small talk. Share your details below, I'll hand back a portrait that lands.",
     },
     "kenalan": {"id": "Kenalan dulu yuk", "en": "Let's get to know you"},
-    "qa_daily_vibe": {"id": "🌞 Cek vibe hari ini", "en": "🌞 Check today's vibe"},
+    "qa_daily_vibe": {"id": "🌞 Vibe hari ini", "en": "🌞 Today's vibe"},
     "qa_daily_vibe_help": {
         "id": "Bacaan energi hari ini yang ringkas",
         "en": "A concise read on today's energy",
     },
-    "qa_trigger_msg": {
-        "id": "Cek vibe energi gw hari ini dong — yang ringkas tapi ngena. Fokus ke energi utama hari ini + kasih 3 tips actionable.",
-        "en": "Give me a concise read on today's energy — hit the main vibe and share 3 actionable tips.",
+    "qa_pick_date": {"id": "📅 Tanggal lain", "en": "📅 Another date"},
+    "qa_pick_date_help": {
+        "id": "Loncat ke vibe energi tanggal tertentu",
+        "en": "Jump to the vibe of a specific date",
     },
+    "vibe_dialog_title_today": {"id": "🌞 Vibe Hari Ini", "en": "🌞 Today's Vibe"},
+    "vibe_dialog_title_pick": {"id": "📅 Vibe Tanggal Pilihan", "en": "📅 Vibe by Date"},
+    "vibe_pick_date_label": {"id": "Pilih tanggal", "en": "Pick a date"},
+    "vibe_read_button": {"id": "🔮 Baca vibe", "en": "🔮 Read the vibe"},
+    "vibe_loading": {"id": "Lagi baca energi…", "en": "Reading the energy…"},
     "name_label": {
         "id": "Nama lengkap (sesuai akta lahir)",
         "en": "Full name (as on birth certificate)",
@@ -1212,6 +1218,97 @@ def opening_prompt() -> str:
         "panjangnya udah cukup bermakna, tutup dengan **— Supernova** di paling bawah "
         "(opsional, kalau kerasa pas)."
     )
+
+
+def vibe_for_date_prompt(target: date, label: str, is_today: bool) -> str:
+    framing = (
+        "energi hari ini" if is_today else f"energi tanggal **{label}**"
+    )
+    when_word = "hari ini" if is_today else f"tanggal {label}"
+    return (
+        f"User minta bacaan {framing} — popup mode, jadi **ringkas tapi ngena**. "
+        f"Konteks date-spesifik (Personal Day / Month / Universal Day / pasaran / moon "
+        f"buat {when_word}) udah ada di system prompt. Pake itu sebagai dasar.\n\n"
+        f"Format output:\n"
+        f"## 🌞 Vibe {label}\n"
+        f"**1 paragraf pendek** (3-4 kalimat) — tulang punggung Personal Day reduced, "
+        f"layering halus master / PM / UD. Angka dalam kurung sparingly.\n\n"
+        f"**3 tips bullet** — aksi konkret buat hari itu (kerja, relasi, atau decision). "
+        f"Spesifik, bukan 'be yourself'.\n\n"
+        f"Tutup dengan `— Supernova`. **Zero istilah teknis** ('Personal Day' dll JANGAN "
+        f"disebut). Total output max 150 kata supaya pas di popup."
+    )
+
+
+def _format_date_for_lang(target: date) -> str:
+    if st.session_state.get("language", "id") == "en":
+        months_en = [
+            "", "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December",
+        ]
+        days_en = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        return f"{days_en[target.weekday()]}, {target.day} {months_en[target.month]} {target.year}"
+    return format_today_id(target)
+
+
+def _stream_vibe_for_date(profile: dict, zodiac: dict | None, target: date) -> None:
+    cache = st.session_state.setdefault("_vibe_cache", {})
+    cache_key = target.isoformat()
+    label = _format_date_for_lang(target)
+    if cache_key in cache:
+        st.markdown(cache[cache_key])
+        return
+    is_today = target == today_local()
+    placeholder = st.empty()
+    answer = stream_assistant(
+        messages_for_api=[{
+            "role": "user",
+            "content": vibe_for_date_prompt(target, label, is_today),
+        }],
+        system=system_prompt(profile, zodiac, target),
+        placeholder=placeholder,
+    )
+    if answer:
+        cache[cache_key] = answer
+
+
+@st.dialog("🌞")
+def show_today_vibe_dialog() -> None:
+    profile = st.session_state.get("profile") or {}
+    zodiac = st.session_state.get("zodiac")
+    if not profile:
+        return
+    st.subheader(t("vibe_dialog_title_today"))
+    st.caption(_format_date_for_lang(today_local()))
+    _stream_vibe_for_date(profile, zodiac, today_local())
+
+
+@st.dialog("📅")
+def show_pick_date_vibe_dialog() -> None:
+    profile = st.session_state.get("profile") or {}
+    zodiac = st.session_state.get("zodiac")
+    if not profile:
+        return
+    st.subheader(t("vibe_dialog_title_pick"))
+    today = today_local()
+    picked = st.date_input(
+        t("vibe_pick_date_label"),
+        value=st.session_state.get("_vibe_pick_date_value", today),
+        key="_vibe_date_picker",
+        min_value=date(1900, 1, 1),
+        max_value=date(today.year + 50, 12, 31),
+    )
+    st.session_state["_vibe_pick_date_value"] = picked
+    do_read = st.button(
+        t("vibe_read_button"),
+        key="_vibe_read_btn",
+        type="primary",
+        use_container_width=True,
+    )
+    if do_read or st.session_state.get("_vibe_read_pending") == picked.isoformat():
+        st.session_state["_vibe_read_pending"] = picked.isoformat()
+        st.divider()
+        _stream_vibe_for_date(profile, zodiac, picked)
 
 
 def kompleksitas_prompt() -> str:
@@ -2441,6 +2538,26 @@ else:
         st.markdown(f"### 👋 Hi, **{nick_display}**")
         st.caption(f"_{profile['full_name']} · {t('born_word')} {profile['dob']}_")
 
+        _vibe_cols = st.columns(2)
+        _open_today_vibe = _vibe_cols[0].button(
+            t("qa_daily_vibe"),
+            key="qa_daily_vibe_sidebar",
+            help=t("qa_daily_vibe_help"),
+            use_container_width=True,
+        )
+        _open_pick_vibe = _vibe_cols[1].button(
+            t("qa_pick_date"),
+            key="qa_pick_date_sidebar",
+            help=t("qa_pick_date_help"),
+            use_container_width=True,
+        )
+        if _open_today_vibe:
+            st.session_state.pop("_vibe_read_pending", None)
+            show_today_vibe_dialog()
+        elif _open_pick_vibe:
+            st.session_state.pop("_vibe_read_pending", None)
+            show_pick_date_vibe_dialog()
+
         with st.expander(t("angka_utama")):
             for label_key, key in [
                 ("misi_hidup", "life_path"),
@@ -2607,21 +2724,6 @@ else:
     page = st.session_state.current_page
 
     if page == "chat":
-        # Quick action: Daily Vibe Check — triggers a concise re-read of
-        # today's energy based on the current day's cycle numbers.
-        if st.session_state.opening_generated:
-            qa_cols = st.columns([2, 6])
-            if qa_cols[0].button(
-                t("qa_daily_vibe"),
-                key="qa_daily_vibe",
-                help=t("qa_daily_vibe_help"),
-            ):
-                st.session_state.messages.append(
-                    {"role": "user", "content": t("qa_trigger_msg")}
-                )
-                st.session_state["_pending_qa_response"] = True
-                st.rerun()
-
         display_msgs = st.session_state.messages
         # Hide a stale opening while we're about to regenerate it so the user
         # doesn't see yesterday's greeting flash before the new one streams in.
@@ -2659,26 +2761,6 @@ else:
                 st.session_state.opening_generated = True
                 save_session_to_storage()
                 st.rerun()
-
-        # Flush a pending quick-action response (e.g. Daily Vibe Check)
-        if st.session_state.get("_pending_qa_response"):
-            st.session_state["_pending_qa_response"] = False
-            with st.chat_message("assistant"):
-                placeholder = st.empty()
-                full_text = stream_assistant(
-                    messages_for_api=to_anthropic_messages(st.session_state.messages),
-                    system=system_prompt(profile, zodiac, today_local()),
-                    placeholder=placeholder,
-                )
-            if full_text:
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": full_text}
-                )
-                save_session_to_storage()
-            else:
-                # Generation failed — remove the triggering user message
-                if st.session_state.messages and st.session_state.messages[-1].get("role") == "user":
-                    st.session_state.messages.pop()
 
     elif page == "karakter":
         render_cached_text_page("karakter", kompleksitas_prompt, profile, zodiac)
