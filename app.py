@@ -80,18 +80,14 @@ TEXTS = {
         "en": "✨ **Supernova** — an intuitive entity that reads you through your name and birthday. Calm, warm, no small talk. Share your details below, I'll hand back a portrait that lands.",
     },
     "kenalan": {"id": "Kenalan dulu yuk", "en": "Let's get to know you"},
-    "qa_daily_vibe": {"id": "🌞 Vibe hari ini", "en": "🌞 Today's vibe"},
-    "qa_daily_vibe_help": {
-        "id": "Bacaan energi hari ini yang ringkas",
-        "en": "A concise read on today's energy",
+    "vibe_button_help": {
+        "id": "Baca vibe energi — default hari ini, bisa pilih tanggal lain",
+        "en": "Read the vibe — defaults to today, pick any date",
     },
-    "qa_pick_date": {"id": "📅 Tanggal lain", "en": "📅 Another date"},
-    "qa_pick_date_help": {
-        "id": "Loncat ke vibe energi tanggal tertentu",
-        "en": "Jump to the vibe of a specific date",
+    "vibe_dialog_title": {
+        "id": "✨ Vibe Energi",
+        "en": "✨ Energy Vibe",
     },
-    "vibe_dialog_title_today": {"id": "🌞 Vibe Hari Ini", "en": "🌞 Today's Vibe"},
-    "vibe_dialog_title_pick": {"id": "📅 Vibe Tanggal Pilihan", "en": "📅 Vibe by Date"},
     "vibe_pick_date_label": {"id": "Pilih tanggal", "en": "Pick a date"},
     "vibe_read_button": {"id": "🔮 Baca vibe", "en": "🔮 Read the vibe"},
     "vibe_loading": {"id": "Lagi baca energi…", "en": "Reading the energy…"},
@@ -1258,24 +1254,15 @@ def _stream_vibe_for_date(profile: dict, zodiac: dict | None, target: date) -> N
         cache[cache_key] = answer
 
 
-@st.dialog("🌞")
-def show_today_vibe_dialog() -> None:
+@st.dialog("✨")
+def show_vibe_dialog() -> None:
+    """Single consolidated vibe dialog. Defaults to today; user can pick
+    any date and the new date auto-streams (cached after first read)."""
     profile = st.session_state.get("profile") or {}
     zodiac = st.session_state.get("zodiac")
     if not profile:
         return
-    st.subheader(t("vibe_dialog_title_today"))
-    st.caption(_format_date_for_lang(today_local()))
-    _stream_vibe_for_date(profile, zodiac, today_local())
-
-
-@st.dialog("📅")
-def show_pick_date_vibe_dialog() -> None:
-    profile = st.session_state.get("profile") or {}
-    zodiac = st.session_state.get("zodiac")
-    if not profile:
-        return
-    st.subheader(t("vibe_dialog_title_pick"))
+    st.subheader(t("vibe_dialog_title"))
     today = today_local()
     picked = st.date_input(
         t("vibe_pick_date_label"),
@@ -1285,16 +1272,8 @@ def show_pick_date_vibe_dialog() -> None:
         max_value=date(today.year + 50, 12, 31),
     )
     st.session_state["_vibe_pick_date_value"] = picked
-    do_read = st.button(
-        t("vibe_read_button"),
-        key="_vibe_read_btn",
-        type="primary",
-        use_container_width=True,
-    )
-    if do_read or st.session_state.get("_vibe_read_pending") == picked.isoformat():
-        st.session_state["_vibe_read_pending"] = picked.isoformat()
-        st.divider()
-        _stream_vibe_for_date(profile, zodiac, picked)
+    st.divider()
+    _stream_vibe_for_date(profile, zodiac, picked)
 
 
 def _help_content_id() -> list[tuple[str, str]]:
@@ -2619,17 +2598,29 @@ def _switch_language(new_lang: str) -> None:
     st.rerun()
 
 
-# 3. (Removed from main area; language toggle now lives in the sidebar.)
-
-_header_cols = st.columns([10, 1])
-_header_cols[0].markdown("# ✨ Supernova")
-if _header_cols[1].button(
-    "❓",
+_header_cols = st.columns([8, 1, 1])
+_header_cols[0].markdown(
+    '<span class="sn-wordmark">✨ Supernova</span>',
+    unsafe_allow_html=True,
+)
+_open_vibe_dialog = _header_cols[1].button(
+    "",
+    icon=":material/auto_awesome:",
+    key="open_vibe_dialog",
+    help=t("vibe_button_help"),
+    use_container_width=True,
+)
+_open_help_dialog = _header_cols[2].button(
+    "",
+    icon=":material/help_outline:",
     key="open_help_dialog",
     help=t("help_button_help"),
     use_container_width=True,
-):
+)
+if _open_help_dialog:
     show_help_dialog()
+elif _open_vibe_dialog and st.session_state.profile is not None:
+    show_vibe_dialog()
 
 if st.session_state.profile is None:
     with st.sidebar:
@@ -2707,26 +2698,6 @@ if st.session_state.profile is None:
 else:
     profile = st.session_state.profile
     zodiac = st.session_state.zodiac
-
-    _vibe_cols = st.columns([3, 1, 6])
-    _open_today_vibe = _vibe_cols[0].button(
-        t("qa_daily_vibe"),
-        key="qa_daily_vibe_home",
-        help=t("qa_daily_vibe_help"),
-        use_container_width=True,
-    )
-    _open_pick_vibe = _vibe_cols[1].button(
-        "📅",
-        key="qa_pick_date_home",
-        help=t("qa_pick_date_help"),
-        use_container_width=True,
-    )
-    if _open_today_vibe:
-        st.session_state.pop("_vibe_read_pending", None)
-        show_today_vibe_dialog()
-    elif _open_pick_vibe:
-        st.session_state.pop("_vibe_read_pending", None)
-        show_pick_date_vibe_dialog()
 
     with st.sidebar:
         _sb_lang_cols = st.columns([1, 2])
