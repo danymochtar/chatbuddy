@@ -1049,10 +1049,11 @@ def daily_block(profile: dict, today: date) -> str:
         lines.append(f"Moon position ({moon}): {SIGN_TRAITS[moon]}")
     lines += [
         "",
-        "**Cara pakai**: saat nulis Vibe Hari Ini di Beranda, **PD reduced adalah tulang "
-        "punggung** narasi — tulis dari sana. PD unreduced & master kasih flavor/emphasis "
-        "di kalimat yg sama atau berikutnya. PM + UD jadi 1 kalimat texture kolektif/"
-        "bulan. Pasaran + moon blend halus, ga pernah di-label.",
+        "**Cara pakai**: saat nulis Vibe (popup atau di mana pun user minta bacaan "
+        "energi tanggal), **PD reduced adalah tulang punggung** narasi — tulis dari sana. "
+        "PD unreduced & master kasih flavor/emphasis di kalimat yg sama atau berikutnya. "
+        "PM + UD jadi 1 kalimat texture kolektif/bulan. Pasaran + moon blend halus, ga "
+        "pernah di-label.",
     ]
     return "\n".join(lines)
 
@@ -1146,7 +1147,7 @@ def opening_prompt() -> str:
         "**ZERO system labels** — no 'numerologi', no 'shio', no 'weton', no 'zodiak', no "
         "rasi bintang, no MBTI type names, dst. Numerologi primer (karakter dari angka), "
         "layer lain invisible.\n\n"
-        "Pake heading Markdown ##. 4 section:\n\n"
+        "Pake heading Markdown ##. 3 section:\n\n"
         "## ✨ [Nickname]\n"
         "Sapa user pake nickname doang — _no 'Halo'_, just nama atau '[Nickname],'. "
         "Langsung 1-2 kalimat synthesis yg blend karakter mereka jadi SATU KESELURUHAN — "
@@ -1186,34 +1187,10 @@ def opening_prompt() -> str:
         "gravitasi.\"_\n"
         "```\n\n"
         "Tanpa attribution. Tanpa prefix 'kamu unik karena...'. Just the quote.\n\n"
-        "## 🌞 Vibe Hari Ini\n"
-        "**Hierarki vibration** yang harus lo ikutin (tulang punggung → ke texture halus):\n"
-        "1. **Personal Day (reduced)** = tulang punggung narasi, energi dominan hari ini.\n"
-        "2. **Personal Day (unreduced)** = flavor mentahnya, selipin kalo notation beda "
-        "dari reduced.\n"
-        "3. **Master number** (kalo ada di chain) = emphasis halus, intuisi spiritual elevated.\n"
-        "4. **Personal Month** = texture bulan, 1 kalimat blend.\n"
-        "5. **Universal Day** = texture kolektif, 1 kalimat blend.\n\n"
-        "Contoh tone yang natural (JANGAN copy persis):\n"
-        "_\"Hari yang introspektif banget buat lo (7), ada flavor mentah 25/7 yang bikin "
-        "refleksi hari ini kerasa lebih dalem. Di tengah bulan yang lagi fleksibel (5), "
-        "suasana kolektif juga lagi di titik introspektif serupa — ga cuma lo yg berasa.\"_\n\n"
-        "Struktur:\n"
-        "- Sebutin hari & tanggal singkat (contoh: 'Minggu, 20 April').\n"
-        "- **1-2 paragraf pendek** — buka dari PD reduced sebagai fondasi, layering PD "
-        "unreduced / master / PM / UD di kalimat-kalimat berikutnya. Angka dalam kurung "
-        "sebagai highlight (contoh _(7)_, _(25/7)_, _(11)_ untuk master).\n"
-        "- **3-4 tips praktis** (bullet) — aksi konkret buat kerja / relationship / decision. "
-        "Spesifik, bukan 'be yourself'.\n\n"
-        "LARANGAN:\n"
-        "- ❌ JANGAN sebut 'Personal Day', 'Personal Month', 'Universal Day', 'Sistem Hans "
-        "Decoz', 'pasaran', 'moon', 'rasi' sebagai label teknis.\n"
-        "- ✅ Angka di kurung OK sebagai highlight halus.\n"
-        "- ✅ Master number kalo ada, emphasis halus ('intuisi lo lagi tajem banget (11)') — "
-        "bukan section sendiri.\n\n"
         "## 💬 Ngobrol Yuk\n"
-        "1-2 kalimat singkat — undang user share apa yg lagi ada di kepala. Kasih tau kalau "
-        "ada refleksi lebih dalem di menu sidebar.\n\n"
+        "1-2 kalimat singkat — undang user share apa yg lagi ada di kepala. Kasih tau "
+        "kalau buat baca vibe energi hari ini atau tanggal lain, ada tombol di atas; "
+        "buat refleksi lebih dalem ada di menu sidebar.\n\n"
         "**Style:** casual 'lo/gw', intelektual & hangat. Ga bertele-tele. Kalo opening ini "
         "panjangnya udah cukup bermakna, tutup dengan **— Supernova** di paling bawah "
         "(opsional, kalau kerasa pas)."
@@ -2439,7 +2416,6 @@ def _switch_language(new_lang: str) -> None:
 # 3. (Removed from main area; language toggle now lives in the sidebar.)
 
 st.markdown("# ✨ Supernova")
-st.caption(t("subtitle"))
 
 if st.session_state.profile is None:
     with st.sidebar:
@@ -2518,6 +2494,26 @@ else:
     profile = st.session_state.profile
     zodiac = st.session_state.zodiac
 
+    _vibe_cols = st.columns([3, 1, 6])
+    _open_today_vibe = _vibe_cols[0].button(
+        t("qa_daily_vibe"),
+        key="qa_daily_vibe_home",
+        help=t("qa_daily_vibe_help"),
+        use_container_width=True,
+    )
+    _open_pick_vibe = _vibe_cols[1].button(
+        "📅",
+        key="qa_pick_date_home",
+        help=t("qa_pick_date_help"),
+        use_container_width=True,
+    )
+    if _open_today_vibe:
+        st.session_state.pop("_vibe_read_pending", None)
+        show_today_vibe_dialog()
+    elif _open_pick_vibe:
+        st.session_state.pop("_vibe_read_pending", None)
+        show_pick_date_vibe_dialog()
+
     with st.sidebar:
         _sb_lang_cols = st.columns([1, 2])
         _sb_lang_cols[0].caption("🌐")
@@ -2537,26 +2533,6 @@ else:
         nick_display = profile.get("nickname") or profile["full_name"].split()[0]
         st.markdown(f"### 👋 Hi, **{nick_display}**")
         st.caption(f"_{profile['full_name']} · {t('born_word')} {profile['dob']}_")
-
-        _vibe_cols = st.columns(2)
-        _open_today_vibe = _vibe_cols[0].button(
-            t("qa_daily_vibe"),
-            key="qa_daily_vibe_sidebar",
-            help=t("qa_daily_vibe_help"),
-            use_container_width=True,
-        )
-        _open_pick_vibe = _vibe_cols[1].button(
-            t("qa_pick_date"),
-            key="qa_pick_date_sidebar",
-            help=t("qa_pick_date_help"),
-            use_container_width=True,
-        )
-        if _open_today_vibe:
-            st.session_state.pop("_vibe_read_pending", None)
-            show_today_vibe_dialog()
-        elif _open_pick_vibe:
-            st.session_state.pop("_vibe_read_pending", None)
-            show_pick_date_vibe_dialog()
 
         with st.expander(t("angka_utama")):
             for label_key, key in [
