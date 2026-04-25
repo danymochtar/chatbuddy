@@ -248,7 +248,7 @@ TEXTS = {
         "id": "Pertanyaan refleksi yang di-tailor ke karakter lo + fase yang lagi lo jalanin. Jawabannya bisa lo simpen jadi jurnal.",
         "en": "Reflection questions tailored to your character + the phase you're in. Answers can be saved to your journal.",
     },
-    "reflection_add": {"id": "➕ Tulis refleksi baru", "en": "➕ Write a new reflection"},
+    "reflection_add": {"id": "Tulis refleksi baru", "en": "Write a new reflection"},
     "reflection_q_label": {"id": "Pertanyaan yang lo pilih", "en": "The question you're answering"},
     "reflection_q_ph": {
         "id": "Paste salah satu pertanyaan di atas, atau tulis topik sendiri",
@@ -353,7 +353,7 @@ TEXTS = {
     "panggilan_hati": {"id": "Panggilan Hati", "en": "Heart's Calling"},
     "aura_luar": {"id": "Aura Luar", "en": "Outer Aura"},
     "talenta_lahir": {"id": "Talenta Lahir", "en": "Birthday Gift"},
-    "refresh": {"id": "🔄 Refresh", "en": "🔄 Refresh"},
+    "refresh": {"id": "Regenerate", "en": "Regenerate"},
     "refresh_help": {
         "id": "Regenerate page — makan token, klik seperlunya",
         "en": "Regenerate page — costs tokens, use sparingly",
@@ -1972,7 +1972,7 @@ def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
         with st.container(border=True):
             header_cols = st.columns([5, 1])
             header_cols[0].caption(entry["created_at"][:10])
-            if header_cols[1].button("🗑️", key=f"del_o_{entry['id']}"):
+            if header_cols[1].button("", icon=":material/delete_outline:", key=f"del_o_{entry['id']}", use_container_width=True):
                 st.session_state.oracle_history = [
                     e for e in history if e["id"] != entry["id"]
                 ]
@@ -2063,7 +2063,7 @@ def render_reflection_page(profile: dict, zodiac: dict | None) -> None:
         with st.container(border=True):
             header_cols = st.columns([5, 1])
             header_cols[0].caption(entry["created_at"][:10])
-            if header_cols[1].button("🗑️", key=f"del_j_{entry['id']}"):
+            if header_cols[1].button("", icon=":material/delete_outline:", key=f"del_j_{entry['id']}", use_container_width=True):
                 st.session_state.journal = [
                     e for e in journal if e["id"] != entry["id"]
                 ]
@@ -2129,7 +2129,13 @@ def render_career_page(profile: dict, zodiac: dict | None) -> None:
         f"**{current['job_title']}**"
         + (f" · _{current['industry']}_" if current.get("industry") else "")
     )
-    if header_cols[1].button(t("career_edit"), key="edit_career"):
+    if header_cols[1].button(
+        "",
+        icon=":material/edit:",
+        key="edit_career",
+        help=t("career_edit"),
+        use_container_width=True,
+    ):
         st.session_state._career_editing = True
         st.rerun()
 
@@ -2137,7 +2143,14 @@ def render_career_page(profile: dict, zodiac: dict | None) -> None:
 
     if current.get("analysis"):
         st.markdown(current["analysis"])
-        if st.button(t("refresh"), key="refresh_career"):
+        _, refresh_col = st.columns([7, 1])
+        if refresh_col.button(
+            "",
+            icon=":material/refresh:",
+            key="refresh_career",
+            help=t("refresh_help"),
+            use_container_width=True,
+        ):
             current["analysis"] = ""
             st.session_state.career = current
             save_session_to_storage()
@@ -2330,21 +2343,27 @@ def render_cached_text_page(
 
     if text:
         st.markdown(text)
-        col1, col2 = st.columns([2, 5])
         if st.session_state.get(confirm_key):
-            col1.warning(t("refresh_confirm"))
-            c1, c2 = col1.columns(2)
-            if c1.button(t("refresh_yes"), key=f"refresh_yes_{page_key}", type="primary"):
+            st.warning(t("refresh_confirm"))
+            c1, c2, _ = st.columns([1, 1, 5])
+            if c1.button(t("refresh_yes"), key=f"refresh_yes_{page_key}", type="primary", use_container_width=True):
                 cached.pop(page_key, None)
                 st.session_state.cached_pages = cached
                 st.session_state[confirm_key] = False
                 save_session_to_storage()
                 st.rerun()
-            if c2.button(t("refresh_no"), key=f"refresh_no_{page_key}"):
+            if c2.button(t("refresh_no"), key=f"refresh_no_{page_key}", use_container_width=True):
                 st.session_state[confirm_key] = False
                 st.rerun()
         else:
-            if col1.button(t("refresh"), key=f"refresh_{page_key}", help=t("refresh_help")):
+            _, refresh_col = st.columns([7, 1])
+            if refresh_col.button(
+                "",
+                icon=":material/refresh:",
+                key=f"refresh_{page_key}",
+                help=t("refresh_help"),
+                use_container_width=True,
+            ):
                 st.session_state[confirm_key] = True
                 st.rerun()
     else:
@@ -2424,7 +2443,7 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
         with st.container(border=True):
             header_cols = st.columns([5, 1])
             header_cols[0].subheader(f"💫 {rel['partner_nick']} · _{rel['relation_type']}_")
-            if header_cols[1].button("🗑️", key=f"del_rel_{rel['id']}"):
+            if header_cols[1].button("", icon=":material/delete_outline:", key=f"del_rel_{rel['id']}", use_container_width=True):
                 rels.pop(i)
                 st.session_state.relationships = rels
                 save_session_to_storage()
