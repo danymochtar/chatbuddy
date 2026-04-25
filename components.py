@@ -37,6 +37,16 @@ def number_card_grid(cards: list[str]) -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
+def sn_empty(message: str, *, icon: str = "✨") -> None:
+    """Render a soft, branded empty-state card. Replaces stock st.info."""
+    safe = escape(message)
+    safe_icon = escape(icon)
+    st.markdown(
+        f'<div class="sn-empty">{safe_icon} &nbsp; {safe}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def cta_ask_deeper(page_key: str, t) -> None:
     """Render a 'Tanya lebih dalem' CTA at the bottom of a non-chat page.
     Click → seeds the chat with a context-aware draft and switches to

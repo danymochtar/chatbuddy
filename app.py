@@ -46,7 +46,7 @@ from zodiac import (
     sun_sign,
     weton,
 )
-from components import cta_ask_deeper, number_card, number_card_grid
+from components import cta_ask_deeper, number_card, number_card_grid, sn_empty
 from nav import render_sidebar_nav
 from theme import theme_css
 
@@ -1856,7 +1856,7 @@ def render_mbti_page(profile: dict, zodiac: dict | None) -> None:
 
     current_mbti = st.session_state.get("mbti")
     if not current_mbti:
-        st.info(t("mbti_intro"))
+        sn_empty(t("mbti_intro"), icon="🧠")
         with st.form("mbti_form"):
             mbti_options = ["—"] + list(MBTI_TYPES.keys())
             picked = st.selectbox(
@@ -1998,7 +1998,7 @@ def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
 
     history = st.session_state.get("oracle_history") or []
     if not history:
-        st.info(t("oracle_empty"))
+        sn_empty(t("oracle_empty"), icon="🔮")
         return
 
     st.markdown(f"### {t('oracle_history_header')}")
@@ -2088,7 +2088,7 @@ def render_reflection_page(profile: dict, zodiac: dict | None) -> None:
     # Past entries
     journal = st.session_state.get("journal") or []
     if not journal:
-        st.info(t("reflection_empty"))
+        sn_empty(t("reflection_empty"), icon="📝")
         return
 
     st.markdown(f"### {t('reflection_entries_header')}")
@@ -2115,7 +2115,7 @@ def render_career_page(profile: dict, zodiac: dict | None) -> None:
 
     if not current or editing:
         if current is None:
-            st.info(t("career_intro"))
+            sn_empty(t("career_intro"), icon="💼")
         with st.form("career_form"):
             job_title = st.text_input(
                 t("career_job"),
@@ -2470,7 +2470,7 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
 
     rels = st.session_state.get("relationships", [])
     if not rels:
-        st.info(t("rel_empty"))
+        sn_empty(t("rel_empty"), icon="💑")
         return
 
     for i, rel in enumerate(rels):
