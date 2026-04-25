@@ -55,7 +55,7 @@ from components import (
     render_loading_pulse,
     sn_empty,
 )
-from nav import render_sidebar_nav
+from nav import render_bottom_tabs, sync_page_from_query
 from theme import theme_css
 
 MODEL = "claude-haiku-4-5"
@@ -164,6 +164,15 @@ TEXTS = {
         "en": "Anything on your mind...",
     },
     "nav_chat": {"id": "Beranda", "en": "Home"},
+    "nav_tab_chat": {"id": "Beranda", "en": "Home"},
+    "nav_tab_diri": {"id": "Diri", "en": "Self"},
+    "nav_tab_vibe": {"id": "Vibe", "en": "Vibe"},
+    "nav_tab_tools": {"id": "Tools", "en": "Tools"},
+    "nav_tab_profil": {"id": "Profil", "en": "Profile"},
+    "tab_landing_placeholder": {
+        "id": "Lagi disusun…",
+        "en": "Coming together…",
+    },
     "nav_group_diri": {"id": "DIRI", "en": "SELF"},
     "nav_group_lapisan": {"id": "LAPISAN LAIN", "en": "OTHER LENSES"},
     "nav_group_tools": {"id": "TOOLS", "en": "TOOLS"},
@@ -3013,10 +3022,6 @@ else:
                     )
 
         st.divider()
-
-        render_sidebar_nav(t, st.session_state.current_page)
-
-        st.divider()
         st.caption(t("storage_note"))
         if st.button(
             t("reset"),
@@ -3034,6 +3039,7 @@ else:
                     del st.session_state[key]
             st.rerun()
 
+    sync_page_from_query()
     page = st.session_state.current_page
 
     if page == "chat":
@@ -3169,5 +3175,12 @@ else:
         render_oracle_page(profile, zodiac)
         if st.session_state.get("oracle_history"):
             cta_ask_deeper("oracle", t)
+
+    elif page in ("diri", "vibe", "tools", "profil"):
+        # Tab landing pages — populated in commits 17 & 18.
+        st.subheader(t(f"nav_tab_{page}"))
+        sn_empty(t("tab_landing_placeholder"), icon="🚧")
+
+    render_bottom_tabs(t)
 
 _flush_storage_if_dirty()

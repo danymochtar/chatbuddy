@@ -1,7 +1,13 @@
-"""Sidebar navigation — grouped into 3 thematic categories.
+"""Mobile-shell navigation — 5 bottom tabs + page-to-tab mapping.
 
-Beranda (chat) stays as a primary button outside the groups; everything
-else is bucketed by intent so 14 menu items become 3 small expanders.
+Layout: ✨ Beranda · 🪞 Diri · 🌟 Vibe · 🧰 Tools · ⚙️ Profil. Each tab
+either is a leaf page itself (chat) or hosts a list of sub-pages
+(diri / vibe / tools), and the bottom tab bar always shows the parent
+tab highlighted regardless of which leaf is currently open.
+
+Navigation is URL-driven. The bottom tab bar renders <a href="?page=X">
+links so a click triggers a Streamlit rerun via query-param change;
+sync_page_from_query() reads the param and updates session state.
 """
 
 from __future__ import annotations
@@ -9,57 +15,55 @@ from __future__ import annotations
 import streamlit as st
 
 
-# Grouped nav: (group_text_key, [(emoji, page_key, page_label_text_key), ...])
-NAV_GROUPS: list[tuple[str, list[tuple[str, str, str]]]] = [
-    (
-        "nav_group_diri",
-        [
-            ("👤", "karakter", "nav_karakter"),
-            ("🔍", "inner", "nav_inner"),
-            ("🎓", "karmic", "nav_karmic"),
-            ("🎯", "fase", "nav_fase"),
-            ("🧭", "arah", "nav_arah"),
-        ],
-    ),
-    (
-        "nav_group_lapisan",
-        [
-            ("🧠", "mbti", "nav_mbti"),
-            ("♈", "zodiak", "nav_zodiak"),
-            ("🐉", "shio", "nav_shio"),
-            ("🌿", "weton", "nav_weton"),
-        ],
-    ),
-    (
-        "nav_group_tools",
-        [
-            ("💼", "career", "nav_career"),
-            ("💑", "relationship", "nav_relationship"),
-            ("📝", "reflection", "nav_reflection"),
-            ("🔮", "oracle", "nav_oracle"),
-        ],
-    ),
+# (label_text_key, icon_emoji, tab_page_key, [leaf_page_keys])
+NAV_TABS: list[tuple[str, str, str, list[str]]] = [
+    ("nav_tab_chat",   "✨", "chat",   []),
+    ("nav_tab_diri",   "🪞", "diri",   ["karakter", "inner", "karmic", "fase", "arah", "mbti"]),
+    ("nav_tab_vibe",   "🌟", "vibe",   ["zodiak", "shio", "weton"]),
+    ("nav_tab_tools",  "🧰", "tools",  ["career", "relationship", "reflection", "oracle"]),
+    ("nav_tab_profil", "⚙️", "profil", []),
 ]
 
 
-def _nav_button(emoji: str, label: str, page_key: str, current_page: str) -> None:
-    is_active = current_page == page_key
-    prefix = "✓ " if is_active else ""
-    if st.button(
-        f"{prefix}{emoji}  {label}",
-        key=f"nav_{page_key}",
-        use_container_width=True,
-        type="primary" if is_active else "secondary",
-    ):
-        st.session_state.current_page = page_key
-        st.rerun()
+def _build_page_to_tab() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for _, _, tab_key, leaves in NAV_TABS:
+        out[tab_key] = tab_key
+        for leaf in leaves:
+            out[leaf] = tab_key
+    return out
 
 
-def render_sidebar_nav(t, current_page: str) -> None:
-    """Render the grouped sidebar nav. Beranda first, then 3 expanders."""
-    _nav_button("✨", t("nav_chat"), "chat", current_page)
-    for group_key, items in NAV_GROUPS:
-        group_has_active = any(page_key == current_page for _, page_key, _ in items)
-        with st.expander(t(group_key), expanded=group_has_active or group_key == "nav_group_diri"):
-            for emoji, page_key, label_key in items:
-                _nav_button(emoji, t(label_key), page_key, current_page)
+PAGE_TO_TAB: dict[str, str] = _build_page_to_tab()
+
+
+def sync_page_from_query() -> None:
+    """Mirror ?page=X into session_state.current_page so URL-driven nav
+    works (refresh-stable, deep-linkable). Run once at the top of app.py
+    before the page dispatcher."""
+    qp_page = st.query_params.get("page")
+    if qp_page and qp_page != st.session_state.get("current_page"):
+        st.session_state.current_page = qp_page
+
+
+def render_bottom_tabs(t) -> None:
+    """Render the fixed bottom tab bar. Highlights the parent tab of
+    whichever leaf page is currently active."""
+    current = st.session_state.get("current_page", "chat")
+    parent_tab = PAGE_TO_TAB.get(current, "chat")
+    rows = []
+    for label_key, icon, tab_key, _ in NAV_TABS:
+        is_active = parent_tab == tab_key
+        cls = "sn-tab-item sn-tab-active" if is_active else "sn-tab-item"
+        rows.append(
+            f'<a href="?page={tab_key}" target="_self" class="{cls}">'
+            f'<div class="sn-tab-icon">{icon}</div>'
+            f'<div class="sn-tab-label">{t(label_key)}</div>'
+            "</a>"
+        )
+    html = (
+        '<div class="sn-tabbar"><div class="sn-tabbar-inner">'
+        + "".join(rows)
+        + "</div></div>"
+    )
+    st.markdown(html, unsafe_allow_html=True)
