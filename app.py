@@ -1189,9 +1189,23 @@ def kompleksitas_prompt() -> str:
         "buat self-awareness\n"
         "- **Bagaimana semuanya nyambung** jadi karakter unik — insight yang bikin user "
         "ngerasa 'this is me'\n\n"
+        "**Lapisan tambahan yang BIJAK lo blend halus** (jangan jadi list — sisipin sebagai "
+        "observasi natural):\n"
+        "- **Cornerstone (huruf awal nama depan)** = cara approach masalah/peluang baru → "
+        "bisa jadi observasi pembuka ('cara lo nyamperin masalah itu...')\n"
+        "- **Capstone (huruf akhir nama depan)** = cara nyelesaiin / closure → bisa jadi "
+        "kontras sama cornerstone ('mulai gini, tapi tutupnya gitu')\n"
+        "- **First vowel (huruf vokal awal)** = motif tersembunyi di balik nama depan, "
+        "lapisan paling intim — bisa jadi punchline halus tentang 'kenapa lo gini'\n"
+        "- **Plane dominan (physical / mental / emotional / intuitive)** = tilt natural lo "
+        "— di mana energi lo paling sering nemu rumah\n"
+        "- **Bridge misi↔bakat & hati↔aura** = celah halus antar core numbers; kalo bridge "
+        "tinggi → ada gap yang lo terus jembatani; kalo 0 → energinya nyatu (bisa jadi "
+        "monoton). Sentuh sebagai 'pekerjaan rumah halus' di paragraf shadow.\n\n"
         "Pake heading `## 👤 Kompleksitas Karakter Lo`. Sertakan angka dalam kurung "
-        "sparingly saat nyebut trait kunci. **Zero istilah teknis.** Astrologi invisible — "
-        "observasi, bukan reading.\n\n"
+        "sparingly saat nyebut trait kunci. **Zero istilah teknis** — JANGAN sebut "
+        "'cornerstone', 'capstone', 'plane', 'bridge'. Astrologi invisible — observasi, "
+        "bukan reading.\n\n"
         "Tutup dengan `— Supernova` di bawah setelah paragraf terakhir."
     )
 
@@ -1200,20 +1214,33 @@ def inner_prompt() -> str:
     return (
         "User buka page Sisi Batin — ini ruang yang cuma orang-orang paling deket yang "
         "bisa liat. Gw mau tunjukin mereka pada diri sendiri dari _dalem_.\n\n"
-        "Fokus 4 hal:\n"
+        "Fokus 6 hal (jangan jadi 6 paragraf kaku — blend ke 4-5 paragraf yang mengalir):\n"
         "1. **Obsesi tersembunyi** — drive yg paling sering nongol di pilihan-pilihan "
         "kecil sehari-hari, yang lo sendiri mungkin ga sadarin.\n"
-        "2. **Versi dewasa lo** — siapa lo bakal jadi setelah umur ~35, gimana karakter "
-        "lo matang, apa yg muncul setelah melalui semua ini.\n"
-        "3. **Cara lo handle emosi saat stres** — respon natural lo saat tekanan, saat "
-        "dunia kerasa berat.\n"
-        "4. **Gaya berpikir lo** — cara natural lo process info & ambil keputusan.\n\n"
+        "2. **Versi dewasa lo** — siapa lo bakal jadi setelah umur ~35-50, gimana karakter "
+        "lo matang. **PENTING: liat status maturity di profile** — kalo 'belum aktif', "
+        "frame sebagai 'yang nanti bakal muncul'; kalo 'mulai muncul' → 'yang lagi "
+        "tumbuh'; kalo 'aktif' → 'yang udah jadi tone utama lo sekarang'.\n"
+        "3. **Cara lo handle emosi saat stres** — respon natural lo saat tekanan.\n"
+        "4. **Gaya berpikir lo** — cara natural lo process info & ambil keputusan.\n"
+        "5. **Bekal bawaan lo (subconscious self)** — seberapa lengkap toolset lo buat "
+        "hadapin situasi mendadak. Sentuh sebagai 'cara lo respon kalo dunia ngagetin "
+        "lo' — confident & cepet adaptasi vs masih sering kalibrasi.\n"
+        "6. **Tilt natural lo (plane dominan)** — apakah lo paling rumah di dunia "
+        "fisik/material, di pikiran, di emosi, atau di intuisi. Ini lapisan paling "
+        "bisu tapi paling nentuin di mana lo nemu energi.\n\n"
+        "**Lapisan ekstra yang BIJAK lo selipin halus:**\n"
+        "- **First vowel (huruf vokal awal nama depan)** = motif paling pribadi di balik "
+        "nama lo — bisa jadi punchline tentang 'kenapa lo gini di dalem'\n"
+        "- **Bridge halus antar core (misi↔bakat, hati↔aura)** = celah dalem yang lo "
+        "harus jembatani; bagus buat paragraf 'PR halus dari dalem'\n\n"
         "Tulis **4-5 paragraf storytelling** yang intim & mengalir. Bukan laporan, tapi "
         "kayak lo dibacain dari dalam diri lo sendiri. Aim for insight yang bikin user "
         "terdiam sebentar.\n\n"
         "Pake heading `## 🔍 Sisi Batin Lo`. Angka dalam kurung saat nyebut trait "
         "penting. **Zero istilah teknis** ('hidden passion', 'maturity number', 'balance', "
-        "'rational thought' JANGAN disebut). Tutup dengan `— Supernova`."
+        "'rational thought', 'subconscious self', 'plane', 'bridge', 'first vowel' "
+        "JANGAN disebut). Tutup dengan `— Supernova`."
     )
 
 
@@ -1221,22 +1248,32 @@ def fase_prompt() -> str:
     return (
         "Tulis tentang **fase hidup** gw — perjalanan besar dari masa lampau, sekarang, "
         "sampai masa depan. Pake data pinnacles (4 fase peluang) + challenges (4 obstacle "
-        "per fase) + umur gw sekarang.\n\n"
+        "per fase) + umur gw sekarang. Plus **babak hidup besar (period cycle)** dan "
+        "**vibe tahun ini (essence + transit huruf aktif)** sebagai layer halus.\n\n"
         "Struktur pake heading ##:\n\n"
         "## 🎯 Fase Hidup Lo\n"
-        "1 paragraf intro — kasih tau bahwa hidup lo terbagi 4 fase besar, tiap fase punya "
-        "peluang & tantangan spesifik.\n\n"
+        "1 paragraf intro — kasih tau bahwa hidup lo terbagi babak besar (3 chapter "
+        "panjang) dan di dalemnya ada 4 fase peluang + tantangan yang lebih spesifik.\n\n"
         "## ✨ Fase Sekarang\n"
         "Zoom-in ke fase lo saat ini: umur berapa sampai berapa, apa temanya, apa "
-        "challenge-nya, bagaimana navigate-nya. 2 paragraf.\n\n"
+        "challenge-nya. Lalu **layer ke babak besar (period cycle)** yang lagi lo jalanin "
+        "— babak ini lagi soal apa secara umum, dan gimana fase 4-pinnacle yang sekarang "
+        "duduk di dalem babak besar itu. 2-3 paragraf.\n\n"
+        "## 🌱 Vibe Tahun Ini di Dalem Fase\n"
+        "1 paragraf pendek — sentuh **essence tahun ini** sebagai flavor spesifik 12 "
+        "bulan ke depan, dan **huruf transit aktif** (fisik / mental / spiritual) "
+        "sebagai bisikan halus di tiap lapisan. Frame sebagai 'di dalem fase besar, "
+        "tahun ini punya rasa yang lebih spesifik — yaitu...'\n\n"
         "## 🗺️ Peta Fase-Fase Lo\n"
         "Ringkasan 4 fase dalam list: untuk setiap fase sebutin rentang umur + tema peluang "
         "+ tantangan yg mendampingi. Format bullet atau numbered list.\n\n"
         "## 💡 Tips Buat Fase Sekarang\n"
         "2-3 tips actionable buat memaksimalkan fase yg lagi lo jalani. Spesifik sesuai "
-        "karakter + tema fase.\n\n"
-        "**Zero istilah teknis** ('pinnacle', 'challenge' dll JANGAN disebut — pake "
-        "'fase', 'tantangan', 'peluang'). Tone: temen deket yg ngeliat peta hidup lo."
+        "karakter + tema fase + vibe tahun ini.\n\n"
+        "**Zero istilah teknis** ('pinnacle', 'challenge', 'period cycle', 'essence', "
+        "'transit' dll JANGAN disebut — pake 'fase', 'tantangan', 'peluang', 'babak "
+        "besar', 'vibe tahun', 'lapisan halus'). Tone: temen deket yg ngeliat peta "
+        "hidup lo."
     )
 
 
@@ -1249,9 +1286,16 @@ def karmic_prompt() -> str:
         "2. Kalo ada angka absen dari nama (karmic lessons) — jelasin sebagai tema yg absen "
         "dari karakter bawaan lo, justru jadi pelajaran yg lo harus aktif latih.\n"
         "3. Kalo lessons kosong / debt kosong — jelasin bahwa karakter lo udah relatively "
-        "balanced di aspek itu, PR-nya di level yg lebih halus.\n\n"
+        "balanced di aspek itu, PR-nya di level yg lebih halus.\n"
+        "4. Kalo essence tahun ini punya karmic debt (cek di profile, mis. notation 16/7 "
+        "= debt 16) — sentuh sebagai 'rem yang lagi nyala spesifik tahun ini'. Frame "
+        "sebagai pelajaran short-term yang lapisin PR life-time.\n"
+        "5. Kalo ada plane yang nyaris kosong (counts plane sangat rendah dibanding plane "
+        "lain) — sentuh sebagai 'lapisan diri lo yang paling kurang dilatih' (mis. "
+        "physical jarang = sering hidup di kepala, ga grounded di tubuh).\n\n"
         "Pake heading ## di atas (misal `## 🎓 PR Hidup Lo`). 2-4 paragraf. Tone: suportif, "
-        "bukan nakut-nakutin. **Zero istilah teknis**."
+        "bukan nakut-nakutin. **Zero istilah teknis** ('karmic debt', 'karmic lesson', "
+        "'essence', 'plane' JANGAN disebut)."
     )
 
 
@@ -1259,18 +1303,30 @@ def arah_prompt() -> str:
     return (
         "Bulan & tahun — dua frame waktu yang saling berbisik. Gw mau kasih tau apa yang "
         "bijak difokusin sekarang, dan apa yang pelan-pelan dibuka selama setahun.\n\n"
+        "**Layer Decoz yang BIJAK lo blend halus** (jangan jadi heading sendiri):\n"
+        "- **Essence tahun** (sum dari huruf-huruf transit aktif) = flavor lebih dalem "
+        "yang melapisi Personal Year. Kalo notation-nya double-digit (mis. 16/7), "
+        "**karmic debt-nya** kasih tone tambahan yang bisa di-blend ke 'pelajaran "
+        "halus tahun ini'.\n"
+        "- **Huruf transit aktif** (fisik / mental / spiritual) = sub-bisikan di tiga "
+        "lapisan kehidupan. Sebutin sebagai observasi natural — 'di lapisan fisik lo "
+        "lagi diteguhin sama X, di mental lagi nyambung ke Y, di spiritual lagi "
+        "transformed lewat Z'.\n\n"
         "Struktur — dua section:\n\n"
         "## 🗓️ Bulan Ini\n"
         "1 paragraf tentang tema/vibe bulan ini — apa yang lagi mengalir, apa yang "
         "dibuka. Terus **3-4 tips actionable** buat 30 hari ke depan — apa yang cocok "
         "di-prioritize, apa yang bijak di-hold.\n\n"
         "## 🌱 Tahun Ini\n"
-        "1 paragraf tentang chapter besar tahun — apa bab hidup yang lo jalanin, apa "
-        "pelajaran utamanya. Terus **3-4 tips zoom-out** — apa yang bijak difokusin "
-        "sepanjang tahun, apa yang bijak di-release.\n\n"
+        "1-2 paragraf tentang chapter besar tahun — apa bab hidup yang lo jalanin, apa "
+        "pelajaran utamanya. **Layer essence sebagai 'tone yang lebih dalem'** — kasih "
+        "1-2 kalimat yang nyambungin Personal Year ke essence. **Sentuh huruf transit "
+        "aktif** sebagai bisikan halus di tiga lapisan. Terus **3-4 tips zoom-out** — "
+        "apa yang bijak difokusin sepanjang tahun, apa yang bijak di-release.\n\n"
         "Hubungkan: bulan ini adalah microstep dari tahun. Tunjukin gimana yang lo "
         "kerjain bulan ini nyambung ke chapter besar. Specific & actionable, bukan "
-        "'be yourself'. **Zero istilah teknis**. Tutup dengan `— Supernova`."
+        "'be yourself'. **Zero istilah teknis** ('essence', 'transit', 'karmic debt' "
+        "JANGAN disebut). Tutup dengan `— Supernova`."
     )
 
 
@@ -1455,16 +1511,24 @@ def career_prompt(career: dict) -> str:
         "drain. Rating soft: 'bener-bener nyambung', 'sebagian nyambung', 'stretch', atau "
         "'mismatch'.\n\n"
         "## ⭐ Kekuatan Natural Lo di Role Ini\n"
-        "3-4 poin bullet: apa yg lo bawa yg natural-nya kuat & cocok. Spesifik ke role.\n\n"
+        "3-4 poin bullet: apa yg lo bawa yg natural-nya kuat & cocok. Spesifik ke role. "
+        "**Selipin orientasi natural dari plane dominan** — fisik = hands-on / dunia "
+        "material; mental = analitis / sistem; emotional = orang / kreatif; intuitive "
+        "= visioner / spiritual. Frame sebagai 'di mana energi lo paling rumah di "
+        "kerjaan'.\n\n"
         "## ⚠️ Potensi Isu / Friksi\n"
         "3-4 poin bullet: dimana role ini bisa bikin lo capek / ga nyaman / kehilangan diri. "
-        "Jangan sugar-coat, tapi juga ga drama.\n\n"
+        "Jangan sugar-coat, tapi juga ga drama. Kalo plane dominan lo bertabrakan sama "
+        "tuntutan role (mis. plane emotional di role yang minta detached & sistemik), "
+        "sentuh sebagai friksi halus.\n\n"
         "## 🛠️ Tips & Solusi\n"
         "3-5 tips actionable buat navigate friksi + amplify kekuatan. Konkret, bukan 'be "
         "yourself'.\n\n"
         "## 🌱 Vibe Tahun Ini Buat Karir\n"
-        "1-2 paragraf: gimana tema tahun ini (personal year lo) affect karir — apa yg bijak "
-        "dikerjain sekarang, apa yg bijak di-hold / dipersiapin. Kasih hint timing.\n\n"
+        "1-2 paragraf: gimana tema tahun ini (personal year + essence + huruf transit "
+        "fisik yg lagi aktif) affect karir — apa yg bijak dikerjain sekarang, apa yg "
+        "bijak di-hold / dipersiapin. Kasih hint timing. Transit fisik paling relevan "
+        "buat kerjaan.\n\n"
         "## 🔀 Alternatif Karir (conditional)\n"
         "**CUMA kasih section ini kalo kecocokan karakter beneran mismatch / role yg "
         "sekarang bakal terus drain lo dalam jangka panjang** meskipun udah pake tips. "
@@ -1553,9 +1617,19 @@ def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
 def reflection_prompt() -> str:
     return (
         "User buka page Refleksi. Kasih mereka **3 pertanyaan refleksi** yang "
-        "tailored ke karakter mereka (Soul Urge primer, blend sama fase hidup + "
-        "tema bulan). Pertanyaan harus open-ended, personal, ngajak refleksi "
-        "dalem — bukan yes/no, bukan generik.\n\n"
+        "tailored ke karakter mereka. Sumber-sumber pertanyaan (pilih yang paling "
+        "relevan sama profile mereka — JANGAN dipake semua):\n"
+        "- **Soul Urge** = panggilan paling dalem, pertanyaan paling primer\n"
+        "- **Bridge halus antar core (misi↔bakat, hati↔aura)** = celah yang lagi "
+        "minta dijembatani — bagus banget jadi pertanyaan refleksi\n"
+        "- **Karmic lessons** = angka yang absen dari nama → pertanyaan tentang "
+        "tema yang lo lagi belajar\n"
+        "- **Essence tahun ini & huruf transit aktif** = vibe yang lagi aktual sekarang "
+        "— pertanyaan yang nyentuh apa yang lagi lo lewatin\n"
+        "- **Fase hidup sekarang (pinnacle + challenge)** = konteks panggung\n\n"
+        "Tiga pertanyaan harus open-ended, personal, ngajak refleksi dalem — bukan "
+        "yes/no, bukan generik. Tiga-nya juga jangan sumber yang sama — variasi "
+        "dari layer yang berbeda biar refleksinya kerasa multi-dimensi.\n\n"
         "Format output:\n"
         "## 📝 Refleksi Buat Lo\n"
         "1 kalimat pengantar — kasih vibe singkat kenapa 3 pertanyaan ini relevan "
@@ -1567,8 +1641,9 @@ def reflection_prompt() -> str:
         "Pertanyaan harus merangsang jawaban yang layered, bukan jawaban satu "
         "kalimat. Contoh tone: 'Apa yang lo takut kehilangan kalo lo benar-benar "
         "jadi diri sendiri?' bukan 'Apa perasaan lo sekarang?'.\n\n"
-        "Tutup dengan 1 kalimat invitation ('pilih satu, tulis jawaban lo di "
-        "bawah — atau angkat topik sendiri') + `— Supernova`."
+        "**Zero istilah teknis** ('bridge', 'essence', 'transit', 'karmic lesson' "
+        "JANGAN disebut). Tutup dengan 1 kalimat invitation ('pilih satu, tulis "
+        "jawaban lo di bawah — atau angkat topik sendiri') + `— Supernova`."
     )
 
 
@@ -1723,6 +1798,30 @@ def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") 
         f"Aura luar: {partner_profile['personality']} ({ARCHETYPES[partner_profile['personality']]}) — {partner_profile['meanings']['personality']}",
         f"Talenta lahir: {partner_profile['birthday']} ({ARCHETYPES[partner_profile['birthday']]}) — {partner_profile['meanings']['birthday']}",
     ]
+    p_planes = (partner_profile.get("planes") or {}).get("dominant")
+    if p_planes:
+        p_lines.append(f"Plane dominan: {p_planes} — {PLANE_MEANINGS.get(p_planes, '')}")
+    p_cs = partner_profile.get("cornerstone")
+    p_cap = partner_profile.get("capstone")
+    if p_cs:
+        p_lines.append(
+            f"Cornerstone (cara dia approach): '{p_cs}' — {LETTER_MEANINGS.get(p_cs, '')}"
+        )
+    if p_cap:
+        p_lines.append(
+            f"Capstone (cara dia closing): '{p_cap}' — {LETTER_MEANINGS.get(p_cap, '')}"
+        )
+    p_phase = partner_profile.get("maturity_phase")
+    p_mat = partner_profile.get("maturity")
+    if p_mat and p_phase:
+        phase_note = {
+            "latent": "(belum aktif — belum keliatan dominan)",
+            "emerging": "(mulai muncul — udah kebaca tapi belum primer)",
+            "active": "(udah aktif — udah jadi tone utama dia)",
+        }.get(p_phase, "")
+        p_lines.append(
+            f"Versi dewasa dia: {p_mat} ({ARCHETYPES.get(p_mat, '')}) {phase_note}"
+        )
     partner_block = "\n".join(p_lines)
 
     intimate_keys = {"pasangan", "partner", "gebetan", "crush"}
@@ -1750,7 +1849,11 @@ def relationship_prompt(partner_profile: dict, relation_type: str = "pasangan") 
         "Bikinin analisa compatibility yg blend karakter gw vs karakter dia. Pake heading ##:\n\n"
         "## 💫 Chemistry Karakter\n"
         "Gimana personality lo dua nyambung atau gesekan. Sebutin aspek mana yg klop (dan "
-        "kenapa), aspek mana yg bisa bikin friksi. Tunjukin dinamika kayak yin-yang.\n\n"
+        "kenapa), aspek mana yg bisa bikin friksi. Tunjukin dinamika kayak yin-yang. "
+        "**Selipin halus**: bandingin **plane dominan** lo dua (kalo sama → easy harmony "
+        "tapi rentan blind-spot bareng; kalo beda → saling lengkapin lapisan), dan **cara "
+        "approach (cornerstone)** lo dua — apakah cara mulai sesuatu kalian klop atau "
+        "sering misfire.\n\n"
         "## 💬 Cara Komunikasi\n"
         "Gimana lo dua sebaiknya ngomong. Tone lo kyk apa, tone dia kyk apa, gimana "
         "ketemuin tengahnya.\n\n"
