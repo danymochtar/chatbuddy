@@ -47,6 +47,7 @@ from zodiac import (
     weton,
 )
 from components import number_card, number_card_grid
+from nav import render_sidebar_nav
 from theme import theme_css
 
 MODEL = "claude-haiku-4-5"
@@ -143,6 +144,9 @@ TEXTS = {
         "en": "Anything on your mind...",
     },
     "nav_chat": {"id": "Beranda", "en": "Home"},
+    "nav_group_diri": {"id": "DIRI", "en": "SELF"},
+    "nav_group_lapisan": {"id": "LAPISAN LAIN", "en": "OTHER LENSES"},
+    "nav_group_tools": {"id": "TOOLS", "en": "TOOLS"},
     "nav_karakter": {"id": "Karakter", "en": "Character"},
     "nav_inner": {"id": "Sisi Batin", "en": "Inner World"},
     "nav_karmic": {"id": "PR Hidup", "en": "Life Lessons"},
@@ -2842,33 +2846,7 @@ else:
 
         st.divider()
 
-        nav_items = [
-            ("🏠", t("nav_chat"), "chat"),
-            ("👤", t("nav_karakter"), "karakter"),
-            ("🔍", t("nav_inner"), "inner"),
-            ("🎓", t("nav_karmic"), "karmic"),
-            ("🎯", t("nav_fase"), "fase"),
-            ("🧠", t("nav_mbti"), "mbti"),
-            ("💼", t("nav_career"), "career"),
-            ("💑", t("nav_relationship"), "relationship"),
-            ("📝", t("nav_reflection"), "reflection"),
-            ("🔮", t("nav_oracle"), "oracle"),
-            ("🗓️", t("nav_arah"), "arah"),
-            ("♈", t("nav_zodiak"), "zodiak"),
-            ("🐉", t("nav_shio"), "shio"),
-            ("🌿", t("nav_weton"), "weton"),
-        ]
-        for emoji, label, key in nav_items:
-            is_active = st.session_state.current_page == key
-            prefix = "✓ " if is_active else ""
-            if st.button(
-                f"{prefix}{emoji} {label}",
-                key=f"nav_{key}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
-                st.session_state.current_page = key
-                st.rerun()
+        render_sidebar_nav(t, st.session_state.current_page)
 
         st.divider()
         st.caption(t("storage_note"))
