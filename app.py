@@ -1866,18 +1866,19 @@ def render_mbti_page(profile: dict, zodiac: dict | None) -> None:
     current_mbti = st.session_state.get("mbti")
     if not current_mbti:
         sn_empty(t("mbti_intro"), icon="🧠")
-        with st.form("mbti_form"):
-            mbti_options = ["—"] + list(MBTI_TYPES.keys())
-            picked = st.selectbox(
-                t("mbti_select"),
-                mbti_options,
-                format_func=lambda x: (
-                    t("mbti_unknown") if x == "—"
-                    else f"{x} — {MBTI_TYPES[x].split(' — ')[0]}"
-                ),
-            )
-            st.caption(t("mbti_test_link"))
-            save = st.form_submit_button(t("mbti_save"), use_container_width=True)
+        with st.container(border=True):
+            with st.form("mbti_form"):
+                mbti_options = ["—"] + list(MBTI_TYPES.keys())
+                picked = st.selectbox(
+                    t("mbti_select"),
+                    mbti_options,
+                    format_func=lambda x: (
+                        t("mbti_unknown") if x == "—"
+                        else f"{x} — {MBTI_TYPES[x].split(' — ')[0]}"
+                    ),
+                )
+                st.caption(t("mbti_test_link"))
+                save = st.form_submit_button(t("mbti_save"), use_container_width=True, type="primary")
         if save and picked != "—":
             st.session_state.mbti = picked
             # Invalidate any cached narrative pages that weave MBTI in
@@ -1887,8 +1888,15 @@ def render_mbti_page(profile: dict, zodiac: dict | None) -> None:
             st.rerun()
         return
 
-    st.markdown(f"**{current_mbti}** — _{MBTI_TYPES[current_mbti]}_")
-    if st.button(t("mbti_edit"), key="edit_mbti"):
+    cols = st.columns([6, 1])
+    cols[0].markdown(f"**{current_mbti}** — _{MBTI_TYPES[current_mbti]}_")
+    if cols[1].button(
+        "",
+        icon=":material/edit:",
+        key="edit_mbti",
+        help=t("mbti_edit"),
+        use_container_width=True,
+    ):
         st.session_state.mbti = None
         for _k in ("karakter", "inner", "mbti"):
             st.session_state.cached_pages.pop(_k, None)
@@ -1978,9 +1986,10 @@ def render_oracle_page(profile: dict, zodiac: dict | None) -> None:
     st.header(t("oracle_header"))
     st.caption(t("oracle_caption"))
 
-    with st.form("oracle_form", clear_on_submit=True):
-        q = st.text_input(t("oracle_q_label"), placeholder=t("oracle_q_ph"))
-        ask = st.form_submit_button(t("oracle_ask"), use_container_width=True)
+    with st.container(border=True):
+        with st.form("oracle_form", clear_on_submit=True):
+            q = st.text_input(t("oracle_q_label"), placeholder=t("oracle_q_ph"))
+            ask = st.form_submit_button(t("oracle_ask"), use_container_width=True, type="primary")
     if ask:
         q_clean = _sanitize(q, 500)
         if not q_clean:
@@ -2076,7 +2085,7 @@ def render_reflection_page(profile: dict, zodiac: dict | None) -> None:
                 placeholder=t("reflection_a_ph"),
                 height=180,
             )
-            save = st.form_submit_button(t("reflection_save"), use_container_width=True)
+            save = st.form_submit_button(t("reflection_save"), use_container_width=True, type="primary")
         if save:
             q_clean = _sanitize(q, 300)
             a_clean = _sanitize(a, 3000)
@@ -2125,29 +2134,30 @@ def render_career_page(profile: dict, zodiac: dict | None) -> None:
     if not current or editing:
         if current is None:
             sn_empty(t("career_intro"), icon="💼")
-        with st.form("career_form"):
-            job_title = st.text_input(
-                t("career_job"),
-                value=(current or {}).get("job_title", ""),
-                placeholder=t("career_job_ph"),
-            )
-            industry = st.text_input(
-                t("career_industry"),
-                value=(current or {}).get("industry", ""),
-                placeholder=t("career_industry_ph"),
-            )
-            duties = st.text_area(
-                t("career_duties"),
-                value=(current or {}).get("duties", ""),
-                placeholder=t("career_duties_ph"),
-                height=80,
-            )
-            years = st.text_input(
-                t("career_years"),
-                value=(current or {}).get("years", ""),
-                placeholder=t("career_years_ph"),
-            )
-            save = st.form_submit_button(t("career_save"), use_container_width=True)
+        with st.container(border=True):
+            with st.form("career_form"):
+                job_title = st.text_input(
+                    t("career_job"),
+                    value=(current or {}).get("job_title", ""),
+                    placeholder=t("career_job_ph"),
+                )
+                industry = st.text_input(
+                    t("career_industry"),
+                    value=(current or {}).get("industry", ""),
+                    placeholder=t("career_industry_ph"),
+                )
+                duties = st.text_area(
+                    t("career_duties"),
+                    value=(current or {}).get("duties", ""),
+                    placeholder=t("career_duties_ph"),
+                    height=80,
+                )
+                years = st.text_input(
+                    t("career_years"),
+                    value=(current or {}).get("years", ""),
+                    placeholder=t("career_years_ph"),
+                )
+                save = st.form_submit_button(t("career_save"), use_container_width=True, type="primary")
         if save:
             if not job_title.strip():
                 st.error(t("career_err"))
@@ -2444,7 +2454,7 @@ def render_relationship_page(profile: dict, zodiac: dict | None) -> None:
                 t("rel_relation"),
                 TEXTS["rel_relation_opts"][st.session_state.language],
             )
-            add = st.form_submit_button(t("rel_submit"), use_container_width=True)
+            add = st.form_submit_button(t("rel_submit"), use_container_width=True, type="primary")
 
         if add:
             if not p_name.strip() or len(p_name.strip()) < 2:
