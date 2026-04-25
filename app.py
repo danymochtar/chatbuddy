@@ -46,6 +46,7 @@ from zodiac import (
     sun_sign,
     weton,
 )
+from theme import theme_css
 
 MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 4000
@@ -2550,19 +2551,15 @@ def build_full_profile(
     return profile, zodiac
 
 
-st.set_page_config(page_title="Supernova", page_icon="✨", layout="centered")
-
-st.markdown(
-    """
-    <style>
-    [data-testid="stMarkdownContainer"] h1 { font-size: 1.7rem !important; margin: 0.5rem 0 0.2rem; }
-    [data-testid="stMarkdownContainer"] h2 { font-size: 1.15rem !important; margin: 0.9rem 0 0.3rem; }
-    [data-testid="stMarkdownContainer"] h3 { font-size: 1.05rem !important; margin: 0.7rem 0 0.3rem; }
-    [data-testid="stMarkdownContainer"] blockquote { margin: 0.6rem 0; padding: 0.4rem 0.8rem; }
-    </style>
-    """,
-    unsafe_allow_html=True,
+st.set_page_config(
+    page_title="Supernova",
+    page_icon="✨",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={"Get help": None, "Report a bug": None, "About": None},
 )
+
+st.markdown(theme_css(), unsafe_allow_html=True)
 
 # 1. Initialize all state defaults before anything renders
 if "language" not in st.session_state:
