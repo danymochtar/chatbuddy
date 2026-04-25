@@ -2701,8 +2701,8 @@ def build_full_profile(
 st.set_page_config(
     page_title="Supernova",
     page_icon="✨",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    layout="centered",
+    initial_sidebar_state="collapsed",
     menu_items={"Get help": None, "Report a bug": None, "About": None},
 )
 

@@ -27,12 +27,131 @@ def theme_css() -> str:
   --sn-border-soft: rgba(233, 199, 123, 0.10);
 }
 
-/* Body + reading column */
+/* Mobile-app shell — narrow column, hide sidebar entirely */
 .stApp { background: var(--sn-bg); }
 [data-testid="stMain"] .block-container {
-  max-width: 760px;
-  padding-top: 2.2rem;
-  padding-bottom: 6rem;
+  max-width: 480px;
+  padding-top: 1rem;
+  padding-bottom: 6.5rem; /* clearance for fixed bottom tab bar */
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Hide the sidebar and its hamburger control */
+[data-testid="stSidebar"],
+[data-testid="stSidebarNav"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+  display: none !important;
+}
+[data-testid="stMain"] {
+  margin-left: 0 !important;
+}
+
+/* Bottom tab bar — fixed at viewport bottom, glass-like surface */
+.sn-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  padding: 0.35rem 0 max(0.35rem, env(safe-area-inset-bottom)) 0;
+  background: rgba(24, 28, 54, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--sn-border-soft);
+  z-index: 1000;
+}
+.sn-tabbar-inner {
+  display: flex;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.sn-tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem;
+  text-decoration: none !important;
+  color: var(--sn-text-muted);
+  padding: 0.45rem 0.2rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: color 0.15s, transform 0.15s;
+}
+.sn-tab-item:hover { color: var(--sn-text-dim); }
+.sn-tab-item:active { transform: scale(0.94); }
+.sn-tab-active {
+  color: var(--sn-gold) !important;
+}
+.sn-tab-active .sn-tab-icon {
+  text-shadow: 0 0 10px rgba(233, 199, 123, 0.4);
+}
+.sn-tab-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.sn-tab-label {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Top app bar — wordmark + utility icons, sits above content */
+.sn-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.6rem;
+}
+
+/* Page list rows (used in tab landing pages) */
+.sn-list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 0.95rem;
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border-soft);
+  border-radius: 12px;
+  margin-bottom: 0.4rem;
+  text-decoration: none !important;
+  color: var(--sn-text);
+  transition: border-color 0.15s, transform 0.12s;
+}
+.sn-list-row:hover {
+  border-color: var(--sn-gold);
+}
+.sn-list-row:active { transform: scale(0.99); }
+.sn-list-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.sn-list-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.sn-list-title {
+  font-weight: 500;
+  color: var(--sn-text);
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+.sn-list-sub {
+  font-size: 0.74rem;
+  color: var(--sn-text-muted);
+  line-height: 1.2;
+  margin-top: 0.1rem;
+}
+.sn-list-chev {
+  color: var(--sn-text-muted);
+  font-size: 1rem;
 }
 
 /* Typography */
