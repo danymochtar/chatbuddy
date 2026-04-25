@@ -166,6 +166,14 @@ TEXTS = {
     "draft_label_from": {"id": "Draft pertanyaan dari", "en": "Draft question from"},
     "draft_send": {"id": "Kirim", "en": "Send"},
     "draft_cancel": {"id": "Batal", "en": "Cancel"},
+    "opening_byline": {
+        "id": "✨ Supernova · pesan pembuka",
+        "en": "✨ Supernova · opening note",
+    },
+    "regen_opening_help": {
+        "id": "Generate ulang pesan pembuka",
+        "en": "Regenerate the opening note",
+    },
     "seed_karakter": {
         "id": "Soal karakter gw yang barusan lo tulis — bisa zoom-in ke bagian shadow / paradoks-nya? Yang paling sering ngeganggu menurut lo apa.",
         "en": "About my character that you just wrote — can you zoom in on the shadow / paradox part? What you think shows up most often.",
@@ -3013,7 +3021,25 @@ else:
 
         for msg in display_msgs:
             with st.chat_message(msg["role"]):
+                if msg.get("is_opening"):
+                    st.caption(t("opening_byline"))
                 st.markdown(msg["content"])
+                if msg.get("is_opening") and st.session_state.opening_generated:
+                    _, regen_col = st.columns([8, 1])
+                    if regen_col.button(
+                        "",
+                        icon=":material/refresh:",
+                        key="regen_opening",
+                        help=t("regen_opening_help"),
+                        use_container_width=True,
+                    ):
+                        st.session_state.messages = [
+                            m for m in st.session_state.messages
+                            if not m.get("is_opening")
+                        ]
+                        st.session_state.opening_generated = False
+                        save_session_to_storage()
+                        st.rerun()
 
         if not st.session_state.opening_generated:
             with st.chat_message("assistant"):
