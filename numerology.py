@@ -323,12 +323,34 @@ ARCHETYPES = {
     33: "Guru",
 }
 
+ARCHETYPES_EN = {
+    1: "Leader",
+    2: "Peacemaker",
+    3: "Creator",
+    4: "Worker",
+    5: "Adventurer",
+    6: "Nurturer",
+    7: "Thinker",
+    8: "Achiever",
+    9: "Idealist",
+    11: "Visionary",
+    22: "Builder",
+    33: "Teacher",
+}
+
 # Short label companions for compact display (sidebar, quick reference)
 KARMIC_DEBT_SHORT = {
     13: "disiplin & kerja keras",
     14: "kelola kebebasan",
     16: "lepas ego",
     19: "balance mandiri & empati",
+}
+
+KARMIC_DEBT_SHORT_EN = {
+    13: "discipline & hard work",
+    14: "manage your freedom",
+    16: "release the ego",
+    19: "balance independence & empathy",
 }
 
 LESSON_SHORT = {
@@ -341,6 +363,18 @@ LESSON_SHORT = {
     7: "inner work & refleksi",
     8: "kelola power & uang",
     9: "kasih tanpa pamrih",
+}
+
+LESSON_SHORT_EN = {
+    1: "dare to take the lead",
+    2: "learn to cooperate",
+    3: "self-expression",
+    4: "discipline & structure",
+    5: "adapt to change",
+    6: "responsibility for those closest",
+    7: "inner work & reflection",
+    8: "manage power & money",
+    9: "love without strings",
 }
 
 
@@ -479,6 +513,20 @@ PLANE_MEANINGS = {
     "intuitive": "Plane intuitif kuat (jarang dominan) — spiritual, visioner, sensitif terhadap halus & spiritual.",
 }
 
+PLANE_MEANINGS_EN = {
+    "physical": "Strong physical plane — practical, durable, sensual, grounded, hands-on. You do your best work through the body & material world.",
+    "mental": "Strong mental plane — logical, analytical, fact-driven, often a thought leader.",
+    "emotional": "Strong emotional plane — imaginative, sentimental, artistic, sympathetic. Your first reaction is through the heart.",
+    "intuitive": "Strong intuitive plane (rarely dominant) — spiritual, visionary, sensitive to the subtle & sacred.",
+}
+
+PLANE_LABEL_EN = {
+    "physical": "physical",
+    "mental": "mental",
+    "emotional": "emotional",
+    "intuitive": "intuitive",
+}
+
 
 def planes_of_expression(full_name: str) -> dict:
     """Decoz Planes of Expression — categorize letters of the full name
@@ -592,6 +640,35 @@ LETTER_MEANINGS = {
     "X": "intens, sensual, magnetic & complicated",
     "Y": "ragu-ragu antara dua dunia, dualitas, butuh berani pilih",
     "Z": "harapan, optimis, ambisi tertinggi",
+}
+
+LETTER_MEANINGS_EN = {
+    "A": "ambitious, independent, decisive, takes initiative",
+    "B": "sensitive, emotional, needs harmony & connection",
+    "C": "expressive, bright, sociable, loves to communicate",
+    "D": "practical, structured, hard-working, no-nonsense",
+    "E": "free spirit, full of ideas, needs variety & motion",
+    "F": "responsibility, caring, family- & community-oriented",
+    "G": "introspective, perfectionist, deep thinker",
+    "H": "material ambition, achievement-focused, organizer",
+    "I": "intense, passionate, emotional depth",
+    "J": "leader, innovator, needs control & own direction",
+    "K": "intuitive, high-strung, channels inspiration",
+    "L": "selflessness, service, love without strings (sometimes too much)",
+    "M": "hard-working, stable, foundational, protector",
+    "N": "creative, expressive, sometimes impulsive, needs outlet",
+    "O": "private, careful, needs safe space & boundaries",
+    "P": "intellectual, analytical, needs time alone",
+    "Q": "intense, magnetic, sometimes contradictory",
+    "R": "tolerant, cares about many, humanitarian",
+    "S": "drama, emotional waves, charisma & turbulence",
+    "T": "spiritual, restless, seeking something bigger",
+    "U": "artistic, generous, sensitive to beauty",
+    "V": "visionary, master builder, big ambitions",
+    "W": "creative restlessness, many ideas but hard to focus",
+    "X": "intense, sensual, magnetic & complicated",
+    "Y": "torn between two worlds, dualities, needs to dare to choose",
+    "Z": "hope, optimism, highest ambition",
 }
 
 

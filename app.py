@@ -7,20 +7,25 @@ import streamlit as st
 
 from numerology import (
     ARCHETYPES,
+    ARCHETYPES_EN,
     BRIDGE_MEANINGS,
     CHALLENGE_MEANINGS,
     DAILY_VIBES,
     ESSENCE_MEANINGS,
     KARMIC_DEBT_MEANINGS,
     KARMIC_DEBT_SHORT,
+    KARMIC_DEBT_SHORT_EN,
     LESSON_MEANINGS,
     LESSON_SHORT,
+    LESSON_SHORT_EN,
     LETTER_MEANINGS,
+    LETTER_MEANINGS_EN,
     MEANINGS,
     MONTH_THEMES,
     PERIOD_CYCLE_MEANINGS,
     PINNACLE_MEANINGS,
     PLANE_MEANINGS,
+    PLANE_MEANINGS_EN,
     SUBCONSCIOUS_SELF_MEANINGS,
     TRANSIT_LAYER_MEANINGS,
     YEAR_THEMES,
@@ -260,6 +265,8 @@ TEXTS = {
     "transit_physical": {"id": "fisik", "en": "physical"},
     "transit_mental": {"id": "mental", "en": "mental"},
     "transit_spiritual": {"id": "spiritual", "en": "spiritual"},
+    "transit_year_of": {"id": "thn ke-{n}/{total}", "en": "yr {n}/{total}"},
+    "age_range_word": {"id": "umur", "en": "age"},
     "reset": {"id": "Reset sesi", "en": "Reset session"},
     "storage_note": {
         "id": "💾 Sesi tersimpen di browser lo.",
@@ -326,6 +333,40 @@ def t(key: str) -> str:
     lang = st.session_state.get("language", "id")
     entry = TEXTS.get(key, {})
     return entry.get(lang, entry.get("id", key))
+
+
+def _is_en() -> bool:
+    return st.session_state.get("language", "id") == "en"
+
+
+def t_archetype(num: int) -> str:
+    if _is_en():
+        return ARCHETYPES_EN.get(num, ARCHETYPES.get(num, ""))
+    return ARCHETYPES.get(num, "")
+
+
+def t_karmic_short(num: int) -> str:
+    if _is_en():
+        return KARMIC_DEBT_SHORT_EN.get(num, KARMIC_DEBT_SHORT.get(num, ""))
+    return KARMIC_DEBT_SHORT.get(num, "")
+
+
+def t_lesson_short(num: int) -> str:
+    if _is_en():
+        return LESSON_SHORT_EN.get(num, LESSON_SHORT.get(num, ""))
+    return LESSON_SHORT.get(num, "")
+
+
+def t_letter_meaning(letter: str) -> str:
+    if _is_en():
+        return LETTER_MEANINGS_EN.get(letter, LETTER_MEANINGS.get(letter, ""))
+    return LETTER_MEANINGS.get(letter, "")
+
+
+def t_plane_meaning(plane: str) -> str:
+    if _is_en():
+        return PLANE_MEANINGS_EN.get(plane, PLANE_MEANINGS.get(plane, ""))
+    return PLANE_MEANINGS.get(plane, "")
 
 
 def _get_local_storage():
@@ -2409,7 +2450,7 @@ else:
                 ("talenta_lahir", "birthday"),
             ]:
                 num = profile[key]
-                st.markdown(f"**{t(label_key)}:** `{num}` · _{ARCHETYPES[num]}_")
+                st.markdown(f"**{t(label_key)}:** `{num}` · _{t_archetype(num)}_")
 
         with st.expander(t("aspek_detail")):
             debts = profile.get("karmic_debts") or {}
@@ -2421,18 +2462,18 @@ else:
             }
             active_debts = [(debt_labels[k], v) for k, v in debts.items() if v]
             for lbl, val in active_debts:
-                short = KARMIC_DEBT_SHORT.get(val, "")
+                short = t_karmic_short(val)
                 st.markdown(f"**{lbl}** (`{val}`) — _{short}_")
             lessons = profile.get("karmic_lessons") or []
             if lessons:
                 st.markdown(f"**{t('pelajaran_label')}:**")
                 for n in lessons:
-                    st.markdown(f"- `{n}` — _{LESSON_SHORT.get(n, '')}_")
+                    st.markdown(f"- `{n}` — _{t_lesson_short(n)}_")
             else:
                 st.markdown(f"**{t('pelajaran_label')}:** {t('pelajaran_kosong')}")
             passion = profile.get("hidden_passion") or []
             if passion:
-                names = ", ".join(f"`{n}` · {ARCHETYPES[n]}" for n in passion)
+                names = ", ".join(f"`{n}` · {t_archetype(n)}" for n in passion)
                 st.markdown(f"**{t('obsesi_label')}:** {names}")
             maturity = profile.get("maturity")
             if maturity:
@@ -2444,7 +2485,7 @@ else:
                 phase_suffix = f" · _{phase_word}_" if phase_word else ""
                 st.markdown(
                     f"**{t('versi_dewasa_label')}:** `{maturity}` · "
-                    f"_{ARCHETYPES[maturity]}_{phase_suffix}"
+                    f"_{t_archetype(maturity)}_{phase_suffix}"
                 )
             sub_self = profile.get("subconscious_self")
             if sub_self:
@@ -2452,7 +2493,7 @@ else:
             planes = profile.get("planes") or {}
             dominant = planes.get("dominant")
             if dominant:
-                st.markdown(f"**{t('planes_label')}:** _{dominant}_")
+                st.markdown(f"**{t('planes_label')}:** _{t(f'transit_{dominant}')}_")
             bridges_data = profile.get("bridges") or {}
             bridge_lp_ex = bridges_data.get("life_path_expression")
             bridge_su_pe = bridges_data.get("soul_urge_personality")
@@ -2471,17 +2512,17 @@ else:
                 if cs:
                     st.markdown(
                         f"**{t('cornerstone_label')}:** `{cs}` · "
-                        f"_{LETTER_MEANINGS.get(cs, '')}_"
+                        f"_{t_letter_meaning(cs)}_"
                     )
                 if cap:
                     st.markdown(
                         f"**{t('capstone_label')}:** `{cap}` · "
-                        f"_{LETTER_MEANINGS.get(cap, '')}_"
+                        f"_{t_letter_meaning(cap)}_"
                     )
                 if fv and fv != cs:
                     st.markdown(
                         f"**{t('first_vowel_label')}:** `{fv}` · "
-                        f"_{LETTER_MEANINGS.get(fv, '')}_"
+                        f"_{t_letter_meaning(fv)}_"
                     )
 
         ess = profile.get("essence") or {}
@@ -2490,7 +2531,7 @@ else:
         if ess.get("final") or transit.get("physical") or transit.get("spiritual"):
             with st.expander(t("vibe_tahun_label")):
                 if ess.get("final"):
-                    ess_label = ARCHETYPES.get(ess["final"], "")
+                    ess_label = t_archetype(ess["final"])
                     st.markdown(
                         f"**{t('essence_label')}:** `{ess['notation']}` · _{ess_label}_"
                     )
@@ -2499,9 +2540,11 @@ else:
                     info = transit.get(layer)
                     if info:
                         layer_word = t(f"transit_{layer}")
+                        year_str = t("transit_year_of").format(
+                            n=info["year_in_letter"], total=info["value"]
+                        )
                         transit_layers.append(
-                            f"- {layer_word}: `{info['letter']}` "
-                            f"(thn ke-{info['year_in_letter']}/{info['value']})"
+                            f"- {layer_word}: `{info['letter']}` ({year_str})"
                         )
                 if transit_layers:
                     st.markdown(f"**{t('transit_label')}:**")
@@ -2510,10 +2553,11 @@ else:
                 if period_now.get("number"):
                     end_age = period_now.get("end_age")
                     end_str = str(end_age) if end_age is not None else "∞"
-                    pn_label = ARCHETYPES.get(period_now["number"], "")
+                    pn_label = t_archetype(period_now["number"])
                     st.markdown(
                         f"**{t('period_now_label')}:** `{period_now['number']}` · "
-                        f"_{pn_label}_ (umur {period_now['start_age']}-{end_str})"
+                        f"_{pn_label}_ ({t('age_range_word')} "
+                        f"{period_now['start_age']}-{end_str})"
                     )
 
         st.divider()
