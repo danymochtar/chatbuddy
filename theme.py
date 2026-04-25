@@ -154,6 +154,20 @@ def theme_css() -> str:
   font-size: 1rem;
 }
 
+/* iOS-style back link on leaf pages */
+.sn-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--sn-gold) !important;
+  text-decoration: none !important;
+  font-size: 0.84rem;
+  font-weight: 500;
+  margin: 0 0 0.7rem;
+  letter-spacing: 0.01em;
+}
+.sn-back-link:hover { color: var(--sn-text); }
+
 /* Typography */
 html, body, [class*="css"], .stMarkdown, [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] li,

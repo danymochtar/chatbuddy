@@ -91,6 +91,35 @@ def sn_empty(message: str, *, icon: str = "✨", allow_markdown: bool = False) -
     )
 
 
+def render_tab_landing(items: list[tuple[str, str, str, str]], t) -> None:
+    """Render an iOS-style settings list for a tab landing page.
+    Each item: (page_key, icon_emoji, title_text_key, sub_text_key).
+    Tapping a row navigates via ?page=<page_key>.
+    """
+    rows = []
+    for page_key, icon, title_key, sub_key in items:
+        rows.append(
+            f'<a href="?page={page_key}" target="_self" class="sn-list-row">'
+            f'<div class="sn-list-icon">{escape(icon)}</div>'
+            '<div class="sn-list-text">'
+            f'<div class="sn-list-title">{escape(t(title_key))}</div>'
+            f'<div class="sn-list-sub">{escape(t(sub_key))}</div>'
+            "</div>"
+            '<div class="sn-list-chev">›</div>'
+            "</a>"
+        )
+    st.markdown("".join(rows), unsafe_allow_html=True)
+
+
+def render_back_to(parent_tab: str, parent_label: str) -> None:
+    """Render an iOS-style 'back' link to the given parent tab."""
+    st.markdown(
+        f'<a href="?page={parent_tab}" target="_self" class="sn-back-link">'
+        f'‹ {escape(parent_label)}</a>',
+        unsafe_allow_html=True,
+    )
+
+
 def render_loading_pulse(placeholder, message: str) -> None:
     """Render a pulsing ✨ + label into a Streamlit placeholder. The first
     streamed chunk overwrites it, so this works as a brand-aligned

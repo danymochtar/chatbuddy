@@ -37,6 +37,31 @@ def _build_page_to_tab() -> dict[str, str]:
 PAGE_TO_TAB: dict[str, str] = _build_page_to_tab()
 
 
+# Per-tab list of menu items rendered on the landing screen of each
+# non-chat tab. (page_key, emoji, title_text_key, sub_text_key).
+TAB_ITEMS: dict[str, list[tuple[str, str, str, str]]] = {
+    "diri": [
+        ("karakter",    "👤", "nav_karakter",     "tagline_karakter"),
+        ("inner",       "🔍", "nav_inner",        "tagline_inner"),
+        ("karmic",      "🎓", "nav_karmic",       "tagline_karmic"),
+        ("fase",        "🎯", "nav_fase",         "tagline_fase"),
+        ("arah",        "🧭", "nav_arah",         "tagline_arah"),
+        ("mbti",        "🧠", "nav_mbti",         "tagline_mbti"),
+    ],
+    "vibe": [
+        ("zodiak",      "♈", "nav_zodiak",       "tagline_zodiak"),
+        ("shio",        "🐉", "nav_shio",         "tagline_shio"),
+        ("weton",       "🌿", "nav_weton",        "tagline_weton"),
+    ],
+    "tools": [
+        ("career",      "💼", "nav_career",       "tagline_career"),
+        ("relationship","💑", "nav_relationship", "tagline_relationship"),
+        ("reflection",  "📝", "nav_reflection",   "tagline_reflection"),
+        ("oracle",      "🔮", "nav_oracle",       "tagline_oracle"),
+    ],
+}
+
+
 def sync_page_from_query() -> None:
     """Mirror ?page=X into session_state.current_page so URL-driven nav
     works (refresh-stable, deep-linkable). Run once at the top of app.py

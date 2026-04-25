@@ -52,10 +52,17 @@ from components import (
     number_card_grid,
     profile_avatar_row,
     render_ai_markdown,
+    render_back_to,
     render_loading_pulse,
+    render_tab_landing,
     sn_empty,
 )
-from nav import render_bottom_tabs, sync_page_from_query
+from nav import (
+    PAGE_TO_TAB,
+    TAB_ITEMS,
+    render_bottom_tabs,
+    sync_page_from_query,
+)
 from theme import theme_css
 
 MODEL = "claude-haiku-4-5"
@@ -174,6 +181,58 @@ TEXTS = {
         "en": "Coming together…",
     },
     "language_label": {"id": "🌐 Bahasa", "en": "🌐 Language"},
+    "tagline_karakter": {
+        "id": "Karakter inti — yang lo bawa dari lahir",
+        "en": "Core character — what you carry from birth",
+    },
+    "tagline_inner": {
+        "id": "Sisi batin — apa yang lo butuh, takutin, kejar diam-diam",
+        "en": "Inner world — what you need, fear, quietly chase",
+    },
+    "tagline_karmic": {
+        "id": "PR hidup — pelajaran yang ngintilin",
+        "en": "Life lessons — the homework that keeps coming",
+    },
+    "tagline_fase": {
+        "id": "Fase besar yang lagi lo jalanin",
+        "en": "The major phase you're walking through",
+    },
+    "tagline_arah": {
+        "id": "Arah bulan & tahun ini",
+        "en": "This month's & year's direction",
+    },
+    "tagline_mbti": {
+        "id": "Tipe MBTI — bagaimana lo proses dunia",
+        "en": "MBTI type — how you process the world",
+    },
+    "tagline_zodiak": {
+        "id": "Sun · Moon · Rising — drama langit lo",
+        "en": "Sun · Moon · Rising — your celestial drama",
+    },
+    "tagline_shio": {
+        "id": "Shio Cina — energi tahun lahir",
+        "en": "Chinese zodiac — your birth-year energy",
+    },
+    "tagline_weton": {
+        "id": "Weton Jawa — primbon lahir",
+        "en": "Javanese weton — birth-day reading",
+    },
+    "tagline_career": {
+        "id": "Karir — apakah cocok sama lo",
+        "en": "Career — does it match who you are",
+    },
+    "tagline_relationship": {
+        "id": "Hubungan — kompatibilitas dan friction",
+        "en": "Relationships — compatibility and friction",
+    },
+    "tagline_reflection": {
+        "id": "Refleksi — jurnal terbimbing",
+        "en": "Reflection — guided journal",
+    },
+    "tagline_oracle": {
+        "id": "Oracle — tanya pertanyaan tunggal, dapet verdict",
+        "en": "Oracle — ask a single question, get a verdict",
+    },
     "nav_group_diri": {"id": "DIRI", "en": "SELF"},
     "nav_group_lapisan": {"id": "LAPISAN LAIN", "en": "OTHER LENSES"},
     "nav_group_tools": {"id": "TOOLS", "en": "TOOLS"},
@@ -3031,6 +3090,12 @@ else:
     sync_page_from_query()
     page = st.session_state.current_page
 
+    # On any leaf page (one that lives under a tab landing), show a
+    # ‹ back link so users can return to the tab list.
+    _parent_tab = PAGE_TO_TAB.get(page)
+    if _parent_tab and _parent_tab not in (page, "chat", "profil"):
+        render_back_to(_parent_tab, t(f"nav_tab_{_parent_tab}"))
+
     if page == "chat":
         display_msgs = st.session_state.messages
         # Hide a stale opening while we're about to regenerate it so the user
@@ -3169,9 +3234,8 @@ else:
         render_profil_page(profile, zodiac)
 
     elif page in ("diri", "vibe", "tools"):
-        # Tab landing pages — populated in commit 18.
         st.subheader(t(f"nav_tab_{page}"))
-        sn_empty(t("tab_landing_placeholder"), icon="🚧")
+        render_tab_landing(TAB_ITEMS[page], t)
 
     render_bottom_tabs(t)
 
