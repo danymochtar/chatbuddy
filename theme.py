@@ -229,6 +229,47 @@ code, .sn-num {
   color: var(--sn-gold);
 }
 
+/* Sidebar profile header — avatar + greeting */
+.sn-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.4rem 0 0.7rem;
+}
+.sn-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sn-surface-2);
+  border: 1.5px solid var(--sn-gold-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Lora', Georgia, serif;
+  font-weight: 600;
+  color: var(--sn-gold);
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  text-shadow: 0 0 10px rgba(233, 199, 123, 0.25);
+}
+.sn-profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.sn-profile-name {
+  font-weight: 600;
+  color: var(--sn-text);
+  font-size: 0.95rem;
+  line-height: 1.15;
+}
+.sn-profile-meta {
+  color: var(--sn-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+
 /* Empty state card */
 .sn-empty {
   background: var(--sn-surface);

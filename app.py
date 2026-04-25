@@ -46,7 +46,13 @@ from zodiac import (
     sun_sign,
     weton,
 )
-from components import cta_ask_deeper, number_card, number_card_grid, sn_empty
+from components import (
+    cta_ask_deeper,
+    number_card,
+    number_card_grid,
+    profile_avatar_row,
+    sn_empty,
+)
 from nav import render_sidebar_nav
 from theme import theme_css
 
@@ -332,6 +338,7 @@ TEXTS = {
     },
     "angka_utama": {"id": "📊 Angka utama", "en": "📊 Core numbers"},
     "aspek_detail": {"id": "🔎 Sisi batin", "en": "🔎 Inner world"},
+    "lapisan_halus": {"id": "🪞 Lapisan halus", "en": "🪞 Subtle layers"},
     "pr_hidup_label": {"id": "Utang Karmic", "en": "Karmic Debt"},
     "pelajaran_label": {"id": "Pelajaran Jiwa", "en": "Soul Lessons"},
     "pelajaran_kosong": {
@@ -2865,8 +2872,12 @@ else:
                     _switch_language(_sb_new_lang)
 
         nick_display = profile.get("nickname") or profile["full_name"].split()[0]
-        st.markdown(f"### 👋 Hi, **{nick_display}**")
-        st.caption(f"_{profile['full_name']} · {t('born_word')} {profile['dob']}_")
+        profile_avatar_row(
+            nick_display,
+            profile["full_name"],
+            t("born_word"),
+            profile["dob"],
+        )
 
         with st.expander(t("angka_utama")):
             number_card_grid([
@@ -2880,7 +2891,7 @@ else:
                 ]
             ])
 
-        with st.expander(t("aspek_detail")):
+        with st.expander(t("lapisan_halus")):
             debts = profile.get("karmic_debts") or {}
             debt_labels = {
                 "life_path": t("misi_hidup"),
@@ -2932,11 +2943,11 @@ else:
                 if bridge_su_pe is not None:
                     st.markdown(f"- {t('bridge_su_pe_label')}: `{bridge_su_pe}`")
 
-        cs = profile.get("cornerstone")
-        cap = profile.get("capstone")
-        fv = profile.get("first_vowel")
-        if cs or cap or fv:
-            with st.expander(t("letters_label")):
+            cs = profile.get("cornerstone")
+            cap = profile.get("capstone")
+            fv = profile.get("first_vowel")
+            if cs or cap or fv:
+                st.markdown("---")
                 if cs:
                     st.markdown(
                         f"**{t('cornerstone_label')}:** `{cs}` · "

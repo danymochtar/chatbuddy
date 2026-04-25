@@ -37,6 +37,20 @@ def number_card_grid(cards: list[str]) -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
+def profile_avatar_row(nickname: str, full_name: str, born_label: str, dob: str) -> None:
+    """Sidebar profile header: gold-bordered initial circle + name + meta."""
+    initial = (nickname or full_name or "?").strip()[:1].upper()
+    html = (
+        '<div class="sn-profile-row">'
+        f'<div class="sn-avatar">{escape(initial)}</div>'
+        '<div class="sn-profile-text">'
+        f'<div class="sn-profile-name">👋 {escape(nickname or full_name)}</div>'
+        f'<div class="sn-profile-meta">{escape(full_name)} · {escape(born_label)} {escape(dob)}</div>'
+        "</div></div>"
+    )
+    st.markdown(html, unsafe_allow_html=True)
+
+
 def sn_empty(message: str, *, icon: str = "✨") -> None:
     """Render a soft, branded empty-state card. Replaces stock st.info."""
     safe = escape(message)
